@@ -13,7 +13,7 @@ extern crate reqwest;
 extern crate zip;
 
 use colored::*;
-use heck::{KebabCase, SnakeCase, CamelCase};
+use heck::{KebabCase, SnakeCase, CamelCase, ShoutySnakeCase};
 use regex::Regex;
 use rustyline::Editor;
 use serde_json::Value as JsonValue;
@@ -49,6 +49,8 @@ struct ProjectConfig {
     pub name_kebab_case: String,
     #[serde(default="Default::default")]
     pub name_camel_case: String,
+    #[serde(default="Default::default")]
+    pub name_shout_snake_case: String,
     pub version: String,
     pub ignore_dirs: Option<Vec<String>>
 }
@@ -192,6 +194,7 @@ impl Reframe {
         self.config.project.name_snake_case = self.config.project.name.to_snake_case();
         self.config.project.name_kebab_case = self.config.project.name.to_kebab_case();
         self.config.project.name_camel_case = self.config.project.name.to_camel_case();
+        self.config.project.name_shout_snake_case = self.config.project.name.to_shouty_snake_case();
 
         let version = self
             .rl
@@ -275,6 +278,7 @@ impl Reframe {
                 make_case_variant!("snake_case", to_snake_case, self.param, p);
                 make_case_variant!("kebab_case", to_kebab_case, self.param, p);
                 make_case_variant!("camel_case", to_camel_case, self.param, p);
+                make_case_variant!("shout_snake_case", to_shouty_snake_case, self.param, p);
             }
 
             self.param
@@ -285,7 +289,7 @@ impl Reframe {
 
         let out_dir = out_dir
             .as_ref()
-            .join(&self.config.project.name_snake_case);
+            .join(&self.config.project.name_kebab_case);
 
         trace!(
             "copy dir dari `{}` ke `{}`",
@@ -345,6 +349,8 @@ impl Reframe {
 
     fn process_template<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         debug!("processing template: {}", path.as_ref().display());
+        print!(".");
+        io::stdout().flush().unwrap();
 
         let rv: String = String::from_utf8_lossy(fs::read(&path)
             .unwrap_or_else(|_| panic!("cannot read: {}", path.as_ref().display()))
@@ -441,6 +447,10 @@ impl Reframe {
         rep = rep.replace(
             "$name_camel_case$",
             &self.config.project.name_camel_case,
+        );
+        rep = rep.replace(
+            "$name_shout_snake_case$",
+            &self.config.project.name_shout_snake_case,
         );
         rep = rep.replace("$version$", &self.config.project.version);
         for p in self.param.iter() {
