@@ -3,7 +3,7 @@ Reframe
 
 Light, fast and simple project scaffolder. Yeoman is powerfull but it's complicated.
 
-![Reframe Demo](/anvie/reframe/raw/master/img/reframe.gif?raw=true)
+![Reframe Demo](img/reframe.gif?raw=true)
 
 Install
 ----------
