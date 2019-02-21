@@ -40,13 +40,6 @@ struct ReframeConfig {
     pub author: String,
 }
 
-// #[derive(Debug, Deserialize)]
-// struct NameEntry {
-//     pub required: bool,
-//     pub default: String,
-//     value
-// }
-
 #[derive(Debug, Deserialize)]
 struct ProjectConfig {
     pub name: String,
@@ -54,12 +47,7 @@ struct ProjectConfig {
     pub version: String,
 }
 
-// impl From<rustyline::error::ReadlineError> for io::Error {
-//     fn from(_a:rustyline::error::ReadlineError) -> io::Error {
-//         io::Error::from(io::ErrorKind::InvalidData)
-//     }
-// }
-
+// urus nanti, sementara ini swallow semuanya.
 fn map_err<E>(_e: E) -> io::Error {
     io::Error::from(io::ErrorKind::InvalidData)
 }
@@ -147,9 +135,7 @@ struct Reframe {
 impl Reframe {
     pub fn open<P: AsRef<Path>>(path: P, rl: Editor<()>) -> io::Result<Self> {
         let config = read_config(path.as_ref().join("Reframe.toml"))?;
-        // dbg!(&config);
         let param = vec![];
-
         Ok(Self {
             config,
             param,
@@ -175,14 +161,13 @@ impl Reframe {
             .unwrap_or("".to_string())
     }
 
-    // pub fn generate<P: AsRef<Path>>(&mut self, out_dir:P) -> io::Result<()> {
-
-    //     Ok(())
-    // }
-
     pub fn generate<P: AsRef<Path>>(&mut self, out_dir: P) -> io::Result<String> {
         let project_name = self.input_read_string(
-            format!("  ➢ {} ({}) : ", "Project name".bright_blue(), &self.config.project.name),
+            format!(
+                "  ➢ {} ({}) : ",
+                "Project name".bright_blue(),
+                &self.config.project.name
+            ),
             self.config.project.name.clone(),
         );
 
@@ -194,7 +179,11 @@ impl Reframe {
 
         let version = self
             .rl
-            .readline(&format!("  ➢ {} ({}) : ", "Version".bright_blue(), &self.config.project.version))
+            .readline(&format!(
+                "  ➢ {} ({}) : ",
+                "Version".bright_blue(),
+                &self.config.project.version
+            ))
             .unwrap_or(self.config.project.version.clone());
 
         if version != "" {
@@ -205,8 +194,6 @@ impl Reframe {
             match &item {
                 JsonValue::Object(o) => {
                     for (k, item) in o {
-                        // dbg!((&k, &item));
-
                         let ask = get_string(item, "ask", k);
                         let dflt = get_string_option(item, "default");
 
@@ -218,7 +205,6 @@ impl Reframe {
                             ParamKind::String
                         };
 
-                        // dbg!(&rv);
                         let p = Param {
                             ask: ask,
                             key: k.clone(),
@@ -236,15 +222,10 @@ impl Reframe {
             }
         }
 
-        // self.param
-        //     .sort_by(|a, b| a.key.partial_cmp(&b.key).unwrap());
         let mut new_param = self.param.clone();
-        // dbg!(&new_param);
 
         for p in new_param.iter_mut() {
-            // let param_imut = self.param.clone();
             if let Some(depends) = p.ifwith.as_ref() {
-                // dbg!(&self.param);
                 if Self::param_value(&self.param, depends) == "false" {
                     continue;
                 }
@@ -273,7 +254,6 @@ impl Reframe {
             }
 
             // buat variasi case-nya
-
             if p.kind == ParamKind::String {
                 make_case_variant!("lowercase", to_lowercase, self.param, p);
                 make_case_variant!("snake_case", to_snake_case, self.param, p);
@@ -285,8 +265,6 @@ impl Reframe {
                 .find(|a| a.key == p.key)
                 .map(|a| a.value = p.value.clone());
         }
-
-        // dbg!(&self.param);
 
         let out_dir = out_dir
             .as_ref()
@@ -333,10 +311,6 @@ impl Reframe {
                 self.copy_dir(&path, &dst)?;
             } else {
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                // if file_name == "Reframe.toml" {
-                //     // just skip
-                //     continue;
-                // }
                 let dst = dst.as_ref().join(file_name);
                 trace!("copy: {} -> {}", &path.display(), &dst.display());
                 fs::copy(&path, &dst)?;
@@ -374,7 +348,6 @@ impl Reframe {
             }
 
             if re_if.is_match(&line) {
-                // println!("match! {}", &line);
                 for p in self.param.iter() {
                     let k = &p.key;
                     let v = p.value.as_ref().unwrap();
@@ -383,7 +356,6 @@ impl Reframe {
                         continue;
                     }
                     if k.starts_with("with_") {
-                        // println!("k: {}, v: {}", k, v);
                         if v == "false" {
                             if line.contains(&format!("<% if param.{} %>", k)) {
                                 debug!("skip...");
@@ -394,9 +366,6 @@ impl Reframe {
                         } else {
                             skip_counter = 1;
                         }
-                    } else {
-                        // new_lines.push(line.replace(&format!("$param.{}$", k), v));
-                        // break;
                     }
                 }
             } else {
@@ -406,7 +375,7 @@ impl Reframe {
             }
         }
 
-        // proses tahap ke #2
+        // proses tahap #2
 
         let re_ignore2 = Regex::new(r"<%(.*)%>").unwrap();
 
@@ -459,11 +428,7 @@ impl Reframe {
             if path.is_dir() {
                 self.process_dir(&path)?;
             } else {
-                // println!("{}", path.to_str().unwrap());
-                // let re = Regex::new(r"\.template\.\S*$").unwrap();
-                // if re.is_match(path.to_str().unwrap()) {
                 self.process_template(path)?;
-                // }
             }
         }
 
@@ -475,7 +440,6 @@ fn extract<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
     let fin = File::open(&zip_path)
         .unwrap_or_else(|_| panic!("Cannot open zip file `{}`", zip_path.as_ref().display()));
     let mut archive = ZipArchive::new(fin)?;
-    // dbg!(archive.len());
     for i in 0..archive.len() {
         let mut file = archive
             .by_index(i)
@@ -488,8 +452,6 @@ fn extract<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
                 println!("File {} comment: {}", i, comment);
             }
         }
-
-        // dbg!(&file.name());
 
         if (&*file.name()).ends_with('/') {
             debug!(
@@ -551,9 +513,8 @@ fn download<P: AsRef<Path>>(url: &str, out_dir: P) -> io::Result<()> {
     }
 
     // extract zip file
-    // fs::remove_dir_all(&out_dir)?;
     let zip_file = out_path.clone();
-    // let out_path = out_dir.as_ref().join("")
+
     debug!(
         "extracting `{}` to `{}` ...",
         &zip_file.display(),
@@ -561,7 +522,6 @@ fn download<P: AsRef<Path>>(url: &str, out_dir: P) -> io::Result<()> {
     );
 
     if extract(zip_file, out_dir.as_ref().to_path_buf()).is_err() {
-        // eprintln!("Source not found");
         Err(io::Error::from(io::ErrorKind::NotFound))?;
     }
 
@@ -609,7 +569,6 @@ fn main() {
         let url = format!("https://github.com/{}.rf/archive/master.zip", source);
         debug!("output: {}", env::temp_dir().display());
         if let Err(e) = download(&url, &reframe_work_path) {
-            // eprintln!("{}", e.to_string().red());
             eprintln!(
                 "😭 {} {}, while pulling from repo for `{}`",
                 "FAILED:".red(),
