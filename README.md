@@ -10,6 +10,10 @@ Light, fast and simple project scaffolder. Yeoman is powerfull but it's complica
 Install
 ----------
 
+Download binary file for your specific platform from [release page](https://github.com/Ansvia/reframe/releases).
+
+Or, if you are Rust and Cargo user, type:
+
     $ cargo install reframe
 
 Usage
