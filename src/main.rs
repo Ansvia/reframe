@@ -13,7 +13,7 @@ extern crate reqwest;
 extern crate zip;
 
 use colored::*;
-use heck::{KebabCase, SnakeCase, CamelCase, ShoutySnakeCase};
+use heck::{CamelCase, KebabCase, ShoutySnakeCase, SnakeCase};
 use regex::Regex;
 use rustyline::Editor;
 use serde_json::Value as JsonValue;
@@ -43,16 +43,16 @@ struct ReframeConfig {
 #[derive(Debug, Deserialize)]
 struct ProjectConfig {
     pub name: String,
-    #[serde(default="Default::default")]
+    #[serde(default = "Default::default")]
     pub name_snake_case: String,
-    #[serde(default="Default::default")]
+    #[serde(default = "Default::default")]
     pub name_kebab_case: String,
-    #[serde(default="Default::default")]
+    #[serde(default = "Default::default")]
     pub name_camel_case: String,
-    #[serde(default="Default::default")]
+    #[serde(default = "Default::default")]
     pub name_shout_snake_case: String,
     pub version: String,
-    pub ignore_dirs: Option<Vec<String>>
+    pub ignore_dirs: Option<Vec<String>>,
 }
 
 // urus nanti, sementara ini swallow semuanya.
@@ -147,8 +147,8 @@ impl Reframe {
         match config.project.ignore_dirs.as_mut() {
             Some(dirs) => {
                 dirs.push(".git".to_string());
-            },
-            None => ()
+            }
+            None => (),
         }
 
         let param = vec![];
@@ -287,9 +287,7 @@ impl Reframe {
                 .map(|a| a.value = p.value.clone());
         }
 
-        let out_dir = out_dir
-            .as_ref()
-            .join(&self.config.project.name_kebab_case);
+        let out_dir = out_dir.as_ref().join(&self.config.project.name_kebab_case);
 
         trace!(
             "copy dir dari `{}` ke `{}`",
@@ -300,7 +298,6 @@ impl Reframe {
         let _ = fs::remove_dir_all(&out_dir);
 
         self.copy_dir(self.path.as_path(), out_dir.as_ref())?;
-            // .unwrap_or_else(|_| panic!("cannot copy dir from `{}` to `{}`", self.path.display(), out_dir.as_ref().display()));
 
         debug!("processing dir: {}", &out_dir.display());
         self.process_dir(&out_dir)?;
@@ -325,15 +322,20 @@ impl Reframe {
             let path = entry.path();
             trace!("path: {}", &path.display());
             let tail_name = path.file_name().unwrap().to_str().unwrap();
-            if self.config.project.ignore_dirs.as_ref().map(|dirs| dirs.contains(&tail_name.to_string())) == Some(true){
+            if self
+                .config
+                .project
+                .ignore_dirs
+                .as_ref()
+                .map(|dirs| dirs.contains(&tail_name.to_string()))
+                == Some(true)
+            {
                 debug!("`{}` ignored", &path.display());
                 continue;
             }
             if path.is_dir() {
                 debug!("visit: {}", &path.display());
-                let dst = dst
-                    .as_ref()
-                    .join(tail_name);
+                let dst = dst.as_ref().join(tail_name);
                 fs::create_dir_all(&dst)?;
                 self.copy_dir(&path, &dst)?;
             } else {
@@ -352,9 +354,12 @@ impl Reframe {
         print!(".");
         io::stdout().flush().unwrap();
 
-        let rv: String = String::from_utf8_lossy(fs::read(&path)
-            .unwrap_or_else(|_| panic!("cannot read: {}", path.as_ref().display()))
-            .as_slice()).to_string();
+        let rv: String = String::from_utf8_lossy(
+            fs::read(&path)
+                .unwrap_or_else(|_| panic!("cannot read: {}", path.as_ref().display()))
+                .as_slice(),
+        )
+        .to_string();
 
         let lines = rv.split('\n');
         let mut new_lines = vec![];
@@ -427,27 +432,17 @@ impl Reframe {
             .open(&out_path)
             .unwrap_or_else(|_| panic!("cannot open out path: {}", out_path));
 
-        writeln!(fout, "{}", rv)
-            .unwrap_or_else(|_| panic!("cannot write `{}`", out_path));
+        writeln!(fout, "{}", rv).unwrap_or_else(|_| panic!("cannot write `{}`", out_path));
 
         Ok(())
     }
 
-    fn string_sub(&self, input:String) -> String {
+    fn string_sub(&self, input: String) -> String {
         let mut rep = input;
         rep = rep.replace("$name$", &self.config.project.name);
-        rep = rep.replace(
-            "$name_snake_case$",
-            &self.config.project.name_snake_case,
-        );
-        rep = rep.replace(
-            "$name_kebab_case$",
-            &self.config.project.name_kebab_case,
-        );
-        rep = rep.replace(
-            "$name_camel_case$",
-            &self.config.project.name_camel_case,
-        );
+        rep = rep.replace("$name_snake_case$", &self.config.project.name_snake_case);
+        rep = rep.replace("$name_kebab_case$", &self.config.project.name_kebab_case);
+        rep = rep.replace("$name_camel_case$", &self.config.project.name_camel_case);
         rep = rep.replace(
             "$name_shout_snake_case$",
             &self.config.project.name_shout_snake_case,
@@ -471,10 +466,13 @@ impl Reframe {
             let entry = item?;
             let mut path = entry.path();
 
-
-            let pbs = PathBuf::from(path.to_path_buf().iter().map(|pb| {
-                self.string_sub(format!("{}", pb.to_string_lossy()))
-            }).collect::<Vec<String>>().join("/"));
+            let pbs = PathBuf::from(
+                path.to_path_buf()
+                    .iter()
+                    .map(|pb| self.string_sub(format!("{}", pb.to_string_lossy())))
+                    .collect::<Vec<String>>()
+                    .join("/"),
+            );
 
             // dbg!(&path);
             // dbg!(&pbs);
