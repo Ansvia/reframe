@@ -1,0 +1,26 @@
+[reframe]
+name = "Basic Rust"
+author = "robin@ansvia.com"
+
+[project]
+name = "Hello World"
+version = "1.0"
+
+[[param]]
+with_serde = { ask = "Dengan serde?", default = false }
+
+[[param]]
+serde_version = { ask = "Versi serde?", default = "1.0", if="with_serde" }
+
+[[param]]
+author_name = {ask = "Author name?" }
+
+[[param]]
+author_email = { ask = "Author email?" }
+
+[load]
+assets = "./static/assets"
+
+[[copy]]
+file = "build.rs.tmpl"
+to = "./"
