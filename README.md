@@ -3,7 +3,9 @@ Reframe
 
 ![Crates](https://img.shields.io/crates/v/reframe.svg)
 
-Light, fast and simple project scaffolder. Yeoman is powerfull but it's complicated.
+> Because *"don't repeat yourself"*
+
+Light, fast and simple project scaffolder, Yeoman is powerfull but it's complicated.
 
 ![Reframe Demo](img/reframe.gif?raw=true)
 
