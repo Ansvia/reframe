@@ -175,7 +175,7 @@ impl Reframe {
                 "Project name".bright_blue(),
                 &self.config.project.name.yellow()
             ),
-            self.config.project.name.clone(),
+            self.config.project.name.to_owned(),
         );
 
         if project_name != "" {
@@ -194,7 +194,7 @@ impl Reframe {
                 "Version".bright_blue(),
                 &self.config.project.version.yellow()
             ))
-            .unwrap_or(self.config.project.version.clone());
+            .unwrap_or(self.config.project.version.to_owned());
 
         if version != "" {
             self.config.project.version = version;
@@ -207,8 +207,8 @@ impl Reframe {
                         let ask = get_string(item, "ask", k);
                         let dflt = get_string_option(item, "default");
 
-                        let kind = if dflt == Some("true".to_string())
-                            || dflt == Some("false".to_string())
+                        let kind = if dflt.as_ref().map(|a| a.as_str()) == Some("true")
+                            || dflt.as_ref().map(|a| a.as_str()) == Some("false")
                         {
                             ParamKind::Bool
                         } else {
@@ -275,7 +275,7 @@ impl Reframe {
             self.param
                 .iter_mut()
                 .find(|a| a.key == p.key)
-                .map(|a| a.value = p.value.clone());
+                .map(|a| a.value = p.value.to_owned());
         }
 
         let out_dir = out_dir.as_ref().join(&self.config.project.name_kebab_case);
@@ -444,6 +444,9 @@ impl Reframe {
         S: Into<Cow<'a, str>>,
     {
         let mut rep = input.into().into_owned();
+        if !rep.contains('$'){
+            return rep;
+        }
         rep = rep.replace("$name$", &self.config.project.name);
         rep = rep.replace("$name_snake_case$", &self.config.project.name_snake_case);
         rep = rep.replace("$name_kebab_case$", &self.config.project.name_kebab_case);
