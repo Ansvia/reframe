@@ -119,6 +119,11 @@ macro_rules! make_case_variant {
     };
 }
 
+const EXCLUDED_EXTS: &'static [&'static str] = &[
+    "png", "ico", "jpg", "jpeg", "avi", "gif", "mp4", "iso", "zip", "gz", "tar", "rar", "svg",
+    "ttf", "woff", "woff2", "eot",
+];
+
 pub struct Reframe {
     pub config: Config,
     param: Vec<Param>,
@@ -451,7 +456,7 @@ impl Reframe {
         for p in self.param.iter() {
             if let Some(value) = p.value.as_ref() {
                 let to_rep = format!("$param.{}$", p.key);
-                trace!("replacing `{}` -> `{}`", to_rep, value);
+                // trace!("replacing `{}` -> `{}`", to_rep, value);
                 rep = rep.replace(&to_rep, value);
             }
         }
@@ -487,6 +492,12 @@ impl Reframe {
             if path.is_dir() {
                 self.process_dir(&path)?;
             } else {
+                if let Some(ext) = path.extension() {
+                    if EXCLUDED_EXTS.contains(&ext.to_str().unwrap()) {
+                        debug!("ignored: {}", path.display());
+                        continue;
+                    }
+                }
                 self.process_template(path)?;
             }
         }

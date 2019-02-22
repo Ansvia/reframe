@@ -94,7 +94,6 @@ fn main() {
             println!("");
             println!("  ✨ project generated at `{}`", out_name);
             println!("{}", "     Ready to roll! 😎".green());
-            println!("");
 
             if let Some(text) = rf.config.project.finish_text {
                 println!(
