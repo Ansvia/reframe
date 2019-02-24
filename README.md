@@ -1,7 +1,7 @@
 Reframe
 ==========
 
-![Crates](https://img.shields.io/crates/v/reframe.svg)
+![Crates](https://img.shields.io/crates/v/reframe.svg) [![Build Status](https://travis-ci.org/Ansvia/reframe.svg?branch=master)](https://travis-ci.org/Ansvia/reframe)
 
 > Because *"don't repeat yourself"*
 
