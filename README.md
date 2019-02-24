@@ -5,7 +5,7 @@ Reframe
 
 > Because *"don't repeat yourself"*
 
-Light, fast and simple project scaffolder, Yeoman is powerfull but it's complicated.
+If you need to build a project in matter of seconds, this tool for you.
 
 ![Reframe Demo](img/reframe.gif?raw=true)
 
@@ -66,3 +66,12 @@ Example:
     $ reframe agus/unicorn
 
 For more detail please see working example at [anvie/basic-rust.rf](https://github.com/anvie/basic-rust.rf).
+
+Supported case variants:
+
+* *_lower_case
+* *_snake_case
+* *_kebab_case
+* *_shout_snake_case
+* *_upper_case
+* *_camel_case

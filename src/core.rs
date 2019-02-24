@@ -6,7 +6,9 @@ use serde_json::Value as JsonValue;
 
 use std::{
     borrow::Cow,
+    collections::HashMap,
     convert::From,
+    fmt::Display,
     fs,
     io::{self, Write},
     path::{Path, PathBuf},
@@ -28,22 +30,15 @@ pub struct ReframeConfig {
 #[derive(Debug, Deserialize)]
 pub struct ProjectConfig {
     pub name: String,
-    #[serde(default = "Default::default")]
-    pub name_snake_case: String,
-    #[serde(default = "Default::default")]
-    pub name_kebab_case: String,
-    #[serde(default = "Default::default")]
-    pub name_camel_case: String,
-    #[serde(default = "Default::default")]
-    pub name_shout_snake_case: String,
+    #[serde(default = "HashMap::new")]
+    pub variants: HashMap<String, String>,
     pub version: String,
     pub ignore_dirs: Option<Vec<String>>,
     pub finish_text: Option<String>,
 }
 
-// urus nanti, sementara ini swallow semuanya.
-fn map_err<E>(_e: E) -> io::Error {
-    io::Error::from(io::ErrorKind::InvalidData)
+fn map_err<E: Display>(e: E) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidInput, format!("{}", e))
 }
 
 fn read_config<P: AsRef<Path>>(path: P) -> io::Result<Config> {
@@ -105,6 +100,21 @@ struct Param {
     pub kind: ParamKind,
 }
 
+impl Param {
+    #[cfg(test)]
+    pub fn new(key: String, value: String) -> Self {
+        Param {
+            ask: Default::default(),
+            key,
+            default: Default::default(),
+            value: Some(value),
+            ifwith: None,
+            autogen: false,
+            kind: ParamKind::String,
+        }
+    }
+}
+
 macro_rules! make_case_variant {
     ($case:expr, $case_func:ident, $param:expr, $p:ident) => {
         $param.push(Param {
@@ -123,6 +133,12 @@ const EXCLUDED_EXTS: &'static [&'static str] = &[
     "png", "ico", "jpg", "jpeg", "avi", "gif", "mp4", "iso", "zip", "gz", "tar", "rar", "svg",
     "ttf", "woff", "woff2", "eot",
 ];
+
+lazy_static! {
+    static ref RE_IF: Regex = Regex::new(r"<% if param\.(\S+) %>").unwrap();
+    static ref RE_ENDIF: Regex = Regex::new(r"<% endif %>").unwrap();
+    static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*)\s*<%(.*)%>").unwrap();
+}
 
 pub struct Reframe {
     pub config: Config,
@@ -182,10 +198,30 @@ impl Reframe {
             self.config.project.name = project_name;
         }
 
-        self.config.project.name_snake_case = self.config.project.name.to_snake_case();
-        self.config.project.name_kebab_case = self.config.project.name.to_kebab_case();
-        self.config.project.name_camel_case = self.config.project.name.to_camel_case();
-        self.config.project.name_shout_snake_case = self.config.project.name.to_shouty_snake_case();
+        self.config.project.variants.insert(
+            "name_lower_case".to_string(),
+            self.config.project.name.to_lowercase(),
+        );
+        self.config.project.variants.insert(
+            "name_upper_case".to_string(),
+            self.config.project.name.to_uppercase(),
+        );
+        self.config.project.variants.insert(
+            "name_snake_case".to_string(),
+            self.config.project.name.to_snake_case(),
+        );
+        self.config.project.variants.insert(
+            "name_kebab_case".to_string(),
+            self.config.project.name.to_kebab_case(),
+        );
+        self.config.project.variants.insert(
+            "name_camel_case".to_string(),
+            self.config.project.name.to_camel_case(),
+        );
+        self.config.project.variants.insert(
+            "name_shout_snake_case".to_string(),
+            self.config.project.name.to_shouty_snake_case(),
+        );
 
         let version = self
             .rl
@@ -265,7 +301,11 @@ impl Reframe {
 
             // buat variasi case-nya
             if p.kind == ParamKind::String {
+                // @TODO(robin): remove this `lowercase` (backward compatibility code).
                 make_case_variant!("lowercase", to_lowercase, self.param, p);
+
+                make_case_variant!("lower_case", to_lowercase, self.param, p);
+                make_case_variant!("upper_case", to_uppercase, self.param, p);
                 make_case_variant!("snake_case", to_snake_case, self.param, p);
                 make_case_variant!("kebab_case", to_kebab_case, self.param, p);
                 make_case_variant!("camel_case", to_camel_case, self.param, p);
@@ -278,7 +318,15 @@ impl Reframe {
                 .map(|a| a.value = p.value.to_owned());
         }
 
-        let out_dir = out_dir.as_ref().join(&self.config.project.name_kebab_case);
+        let out_dir = out_dir.as_ref().join(
+            &self
+                .config
+                .project
+                .variants
+                .get("name_kebab_case")
+                .as_ref()
+                .unwrap(),
+        );
 
         // process finish_text
         self.process_internal_param();
@@ -310,7 +358,8 @@ impl Reframe {
     /// ini harus dijalankan sesudah konfig diproses/parsed.
     fn process_internal_param(&mut self) {
         if let Some(text) = self.config.project.finish_text.as_ref() {
-            self.config.project.finish_text = Some(self.string_sub(text));
+            self.config.project.finish_text =
+                Some(Self::string_sub(text, &self.config, &self.param));
         }
     }
 
@@ -351,27 +400,13 @@ impl Reframe {
         Ok(())
     }
 
-    fn process_template<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
-        debug!("processing template: {}", path.as_ref().display());
-        print!(".");
-        io::stdout().flush().unwrap();
-
-        let rv: String = String::from_utf8_lossy(
-            fs::read(&path)
-                .unwrap_or_else(|_| panic!("cannot read: {}", path.as_ref().display()))
-                .as_slice(),
-        )
-        .to_string();
-
-        let lines = rv.split('\n');
+    fn process_template_str(text: String, param: &Vec<Param>, config: &Config) -> String {
+        let lines = text.split('\n');
         let mut new_lines = vec![];
         let mut continue_until = ContUntil::new();
         let mut skip_counter = 0;
 
         // proses tahap #1
-
-        let re_if = Regex::new(r"<% if param\.(\S+) %>").unwrap();
-        let re_ignore = Regex::new(r"<% endif %>").unwrap();
 
         for line in lines.clone() {
             if continue_until.start {
@@ -381,8 +416,8 @@ impl Reframe {
                 continue;
             }
 
-            if re_if.is_match(&line) {
-                for p in self.param.iter() {
+            if RE_IF.is_match(&line) {
+                for p in param.iter() {
                     let k = &p.key;
                     let v = p.value.as_ref().unwrap();
                     if skip_counter > 0 {
@@ -403,7 +438,7 @@ impl Reframe {
                     }
                 }
             } else {
-                if !re_ignore.is_match(&line) {
+                if !RE_ENDIF.is_match(&line) {
                     new_lines.push(line.to_string());
                 }
             }
@@ -411,18 +446,33 @@ impl Reframe {
 
         // proses tahap #2
 
-        let re_ignore2 = Regex::new(r"<%(.*)%>").unwrap();
-
         let mut new_lines2 = vec![];
 
         for line in new_lines {
-            if re_ignore2.is_match(&line) {
+            if RE_SYNTAX_MARK.is_match(&line) {
                 continue;
             }
-            new_lines2.push(self.string_sub(line.to_owned()));
+            new_lines2.push(Self::string_sub(line.to_owned(), config, param));
         }
 
         let rv = new_lines2.join("\n");
+
+        rv
+    }
+
+    fn process_template<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        debug!("processing template: {}", path.as_ref().display());
+        print!(".");
+        io::stdout().flush().unwrap();
+
+        let rv: String = String::from_utf8_lossy(
+            fs::read(&path)
+                .unwrap_or_else(|_| panic!("cannot read: {}", path.as_ref().display()))
+                .as_slice(),
+        )
+        .to_string();
+
+        let rv = Self::process_template_str(rv, &self.param, &self.config);
 
         let out_path = format!("{}", path.as_ref().display());
 
@@ -439,27 +489,24 @@ impl Reframe {
         Ok(())
     }
 
-    fn string_sub<'a, S>(&self, input: S) -> String
+    fn string_sub<'a, S>(input: S, config: &Config, param: &Vec<Param>) -> String
     where
         S: Into<Cow<'a, str>>,
     {
         let mut rep = input.into().into_owned();
-        if !rep.contains('$'){
+        if !rep.contains('$') {
             return rep;
         }
-        rep = rep.replace("$name$", &self.config.project.name);
-        rep = rep.replace("$name_snake_case$", &self.config.project.name_snake_case);
-        rep = rep.replace("$name_kebab_case$", &self.config.project.name_kebab_case);
-        rep = rep.replace("$name_camel_case$", &self.config.project.name_camel_case);
-        rep = rep.replace(
-            "$name_shout_snake_case$",
-            &self.config.project.name_shout_snake_case,
-        );
-        rep = rep.replace("$version$", &self.config.project.version);
-        for p in self.param.iter() {
+        rep = rep.replace("$name$", &config.project.name);
+
+        for (k, vr) in config.project.variants.iter() {
+            rep = rep.replace(&format!("${}$", k), vr);
+        }
+
+        rep = rep.replace("$version$", &config.project.version);
+        for p in param.iter() {
             if let Some(value) = p.value.as_ref() {
                 let to_rep = format!("$param.{}$", p.key);
-                // trace!("replacing `{}` -> `{}`", to_rep, value);
                 rep = rep.replace(&to_rep, value);
             }
         }
@@ -477,13 +524,16 @@ impl Reframe {
             let pbs = PathBuf::from(
                 path.to_path_buf()
                     .iter()
-                    .map(|pb| self.string_sub(format!("{}", pb.to_string_lossy())))
+                    .map(|pb| {
+                        Self::string_sub(
+                            format!("{}", pb.to_string_lossy()),
+                            &self.config,
+                            &self.param,
+                        )
+                    })
                     .collect::<Vec<String>>()
                     .join("/"),
             );
-
-            // dbg!(&path);
-            // dbg!(&pbs);
 
             if path != pbs {
                 // ganti path ke terbaru yang telah update
@@ -506,5 +556,90 @@ impl Reframe {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    macro_rules! test_make_case_variant {
+        ($case:expr, $case_func:ident, $param:expr, $p:ident) => {
+            $param.push(Param {
+                ask: Default::default(),
+                key: format!("{}_{}", $p.key, $case),
+                default: $p.default.as_ref().map(|a| a.$case_func().to_owned()),
+                value: $p.value.as_ref().map(|a| a.$case_func().to_owned()),
+                ifwith: $p.ifwith.clone(),
+                autogen: true,
+                kind: ParamKind::String,
+            });
+        };
+    }
+
+    #[test]
+    fn test_string_sub() {
+        let input = r#"\
+        project = "$name$"\
+        project_lower = "$name_lower_case$"\
+        project_upper = "$name_upper_case$"\
+
+        param.a = "$param.a$"\
+        param.a_lower = "$param.a_lower_case$"\
+        param.a_snake = "$param.a_snake_case$"\
+        param.a_camel = "$param.a_camel_case$"\
+        param.a_shout_snake = "$param.a_shout_snake_case$"\
+        "#;
+
+        let expected = r#"\
+        project = "Mantap Lah"\
+        project_lower = "mantap lah"\
+        project_upper = "MANTAP LAH"\
+
+        param.a = "Jumping Fox"\
+        param.a_lower = "jumping fox"\
+        param.a_snake = "jumping_fox"\
+        param.a_camel = "JumpingFox"\
+        param.a_shout_snake = "JUMPING_FOX"\
+        "#;
+
+        let name = "Mantap Lah".to_string();
+
+        let config = Config {
+            reframe: ReframeConfig {
+                name: "My Reframe".to_string(),
+                author: "robin".to_string(),
+            },
+            project: ProjectConfig {
+                name: name.to_owned(),
+                variants: {
+                    let mut h = HashMap::new();
+                    h.insert("name".to_string(), name.to_owned());
+                    h.insert("name_lower_case".to_string(), name.to_lowercase());
+                    h.insert("name_upper_case".to_string(), name.to_uppercase());
+                    h.insert("name_kebab_case".to_string(), name.to_kebab_case());
+                    h.insert("name_camel_case".to_string(), name.to_camel_case());
+                    h.insert("name_snake_case".to_string(), name.to_snake_case());
+                    h
+                },
+                version: "0.1.1".to_string(),
+                ignore_dirs: None,
+                finish_text: None,
+            },
+            param: vec![],
+        };
+
+        let p = Param::new("a".to_string(), "Jumping Fox".to_string());
+
+        let mut param = vec![];
+        param.push(p.clone());
+        test_make_case_variant!("lower_case", to_lowercase, param, p);
+        test_make_case_variant!("upper_case", to_uppercase, param, p);
+        test_make_case_variant!("snake_case", to_snake_case, param, p);
+        test_make_case_variant!("camel_case", to_camel_case, param, p);
+        test_make_case_variant!("shout_snake_case", to_shouty_snake_case, param, p);
+
+        let output = Reframe::string_sub(input, &config, &param);
+        assert_eq!(output, expected);
     }
 }

@@ -1,11 +1,11 @@
 
 PWD = $(shell pwd)
 
-all: build build-linux-musl
+all: release build-linux-musl
 
-build:
+release:
 	@@echo "building..."
-	@@cargo build
+	@@cargo build --release
 
 build-linux-musl:
 	@@echo "building using docker..."
@@ -18,5 +18,11 @@ build-linux-musl:
 fmt:
 	@@cargo fmt
 
-.PHONY: fmt build build-linux-musl
+test:
+	@@cargo test
+
+clean:
+	@@cargo clean
+
+.PHONY: fmt release build-linux-musl clean test
 

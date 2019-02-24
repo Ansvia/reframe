@@ -11,6 +11,8 @@ extern crate heck;
 extern crate regex;
 extern crate reqwest;
 extern crate zip;
+#[macro_use]
+extern crate lazy_static;
 
 mod core;
 mod util;
