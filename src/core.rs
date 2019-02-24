@@ -116,16 +116,18 @@ impl Param {
 }
 
 macro_rules! make_case_variant {
-    ($case:expr, $case_func:ident, $param:expr, $p:ident) => {
-        $param.push(Param {
-            ask: Default::default(),
-            key: format!("{}_{}", $p.key, $case),
-            default: $p.default.as_ref().map(|a| a.$case_func().to_owned()),
-            value: $p.value.as_ref().map(|a| a.$case_func().to_owned()),
-            ifwith: $p.ifwith.clone(),
-            autogen: true,
-            kind: ParamKind::String,
-        });
+    ($p:ident, $param:expr, [ $( [$case:expr, $case_func:ident] ),* ] ) => {
+        $(
+            $param.push(Param {
+                ask: Default::default(),
+                key: format!("{}_{}", $p.key, $case),
+                default: $p.default.as_ref().map(|a| a.$case_func().to_owned()),
+                value: $p.value.as_ref().map(|a| a.$case_func().to_owned()),
+                ifwith: $p.ifwith.clone(),
+                autogen: true,
+                kind: ParamKind::String,
+            });
+        )*
     };
 }
 
@@ -301,15 +303,20 @@ impl Reframe {
 
             // buat variasi case-nya
             if p.kind == ParamKind::String {
-                // @TODO(robin): remove this `lowercase` (backward compatibility code).
-                make_case_variant!("lowercase", to_lowercase, self.param, p);
-
-                make_case_variant!("lower_case", to_lowercase, self.param, p);
-                make_case_variant!("upper_case", to_uppercase, self.param, p);
-                make_case_variant!("snake_case", to_snake_case, self.param, p);
-                make_case_variant!("kebab_case", to_kebab_case, self.param, p);
-                make_case_variant!("camel_case", to_camel_case, self.param, p);
-                make_case_variant!("shout_snake_case", to_shouty_snake_case, self.param, p);
+                make_case_variant!(
+                    p,
+                    self.param,
+                    [
+                        // @TODO(robin): remove this `lowercase` (backward compatibility code).
+                        ["lowercase", to_lowercase],
+                        ["lower_case", to_lowercase],
+                        ["upper_case", to_uppercase],
+                        ["snake_case", to_snake_case],
+                        ["kebab_case", to_kebab_case],
+                        ["camel_case", to_camel_case],
+                        ["shout_snake_case", to_shouty_snake_case]
+                    ]
+                );
             }
 
             self.param
@@ -563,20 +570,6 @@ impl Reframe {
 mod tests {
     use super::*;
 
-    macro_rules! test_make_case_variant {
-        ($case:expr, $case_func:ident, $param:expr, $p:ident) => {
-            $param.push(Param {
-                ask: Default::default(),
-                key: format!("{}_{}", $p.key, $case),
-                default: $p.default.as_ref().map(|a| a.$case_func().to_owned()),
-                value: $p.value.as_ref().map(|a| a.$case_func().to_owned()),
-                ifwith: $p.ifwith.clone(),
-                autogen: true,
-                kind: ParamKind::String,
-            });
-        };
-    }
-
     #[test]
     fn test_string_sub() {
         let input = r#"\
@@ -633,11 +626,17 @@ mod tests {
 
         let mut param = vec![];
         param.push(p.clone());
-        test_make_case_variant!("lower_case", to_lowercase, param, p);
-        test_make_case_variant!("upper_case", to_uppercase, param, p);
-        test_make_case_variant!("snake_case", to_snake_case, param, p);
-        test_make_case_variant!("camel_case", to_camel_case, param, p);
-        test_make_case_variant!("shout_snake_case", to_shouty_snake_case, param, p);
+        make_case_variant!(
+            p,
+            param,
+            [
+                ["lower_case", to_lowercase],
+                ["upper_case", to_uppercase],
+                ["snake_case", to_snake_case],
+                ["camel_case", to_camel_case],
+                ["shout_snake_case", to_shouty_snake_case]
+            ]
+        );
 
         let output = Reframe::string_sub(input, &config, &param);
         assert_eq!(output, expected);
