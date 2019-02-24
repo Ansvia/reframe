@@ -79,8 +79,6 @@ pub fn download<P: AsRef<Path>>(url: &str, out_dir: P) -> io::Result<()> {
             })?
             .copy_to(&mut w)
             .unwrap_or_else(|_| panic!("cannot store data to `{}`", out_path.display()));
-
-        println!("");
     }
 
     // extract zip file

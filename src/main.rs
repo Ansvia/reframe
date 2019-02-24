@@ -27,41 +27,45 @@ use std::{
 
 use crate::core::Reframe;
 
-fn print_usage(args: &Vec<String>) {
-    let path = Path::new(args.get(0).unwrap());
+fn print_usage(args: &[String]) {
+    let path = Path::new(&args[0]);
     let exe_name = path.file_name().unwrap().to_str().unwrap();
     println!("Usage: ");
     println!("       ");
     println!("       $ {} [SOURCE]", exe_name);
-    println!("");
+    println!();
     println!("Example:");
-    println!("");
+    println!();
     println!("       $ {} anvie/basic-rust", exe_name);
-    println!("");
+    println!();
 }
 
 fn main() {
     env_logger::init();
 
-    println!("");
+    println!();
     println!(" Reframe {}", env!("CARGO_PKG_VERSION"));
     println!(" project generator tool");
     println!(" by: Robin <r@ansvia.com>");
     println!(" ---------------------------");
-    println!("");
+    println!();
 
     let args: Vec<String> = env::args().collect();
 
-    if args.len() != 2 {
+    if args.len() < 3 {
         print_usage(&args);
         return;
     }
 
-    let source = args.iter().skip(1).next().unwrap();
-    let reframe_work_path = env::temp_dir().join("reframe_work");
-    let mut source_path = PathBuf::from(&source);
+    let dry_run = args.contains(&"--dryrun".to_string());
 
-    if !Path::new(&source).exists() {
+    if dry_run {
+        debug!("DRY RUN MODE");
+    }
+
+    let source = &args[1];
+    let reframe_work_path = env::temp_dir().join("reframe_work");
+    let source_path = if !Path::new(&source).exists() {
         debug!("source not found in local: {}", source);
         debug!("trying get from github.com/{} ...", source);
         println!("Downloading from repo...");
@@ -74,14 +78,16 @@ fn main() {
                 e,
                 source.bright_blue()
             );
-            eprintln!("");
+            eprintln!();
             return;
         }
-        source_path = reframe_work_path.join(format!(
+        reframe_work_path.join(format!(
             "{}.rf-master",
-            source.split("/").skip(1).collect::<String>()
-        ));
-    }
+            source.split('/').skip(1).collect::<String>()
+        ))
+    } else {
+        PathBuf::from(&source)
+    };
 
     let mut rl = Editor::<()>::new();
 
@@ -89,11 +95,11 @@ fn main() {
         debug!("no history");
     }
 
-    let mut rf = Reframe::open(&source_path, rl).expect("Cannot open dir");
+    let mut rf = Reframe::open(&source_path, rl, dry_run).expect("Cannot open dir");
 
     match rf.generate(".") {
         Ok(out_name) => {
-            println!("");
+            println!();
             println!("  ✨ project generated at `{}`", out_name);
             println!("{}", "     Ready to roll! 😎".green());
 

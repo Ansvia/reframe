@@ -63,19 +63,20 @@ fn get_string_option(o: &JsonValue, key: &'static str) -> Option<String> {
 }
 
 #[derive(Default)]
-struct ContUntil {
-    pub matching: String,
+struct SkipLine<'a> {
+    pub matching: &'a str,
     pub start: bool,
 }
 
-impl ContUntil {
+impl<'a> SkipLine<'a> {
     #[inline]
     pub fn new() -> Self {
         Self {
-            matching: Default::default(),
+            matching: "",
             start: false,
         }
     }
+
     #[inline]
     pub fn stop(&mut self) {
         self.start = false;
@@ -86,6 +87,7 @@ impl ContUntil {
 enum ParamKind {
     Bool,
     String,
+    Options,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -96,6 +98,8 @@ struct Param {
     pub value: Option<String>,
     #[serde(rename = "if")]
     pub ifwith: Option<String>,
+    #[serde(default = "Vec::<String>::new")]
+    pub options: Vec<String>,
     pub autogen: bool,
     pub kind: ParamKind,
 }
@@ -109,6 +113,7 @@ impl Param {
             default: Default::default(),
             value: Some(value),
             ifwith: None,
+            options: vec![],
             autogen: false,
             kind: ParamKind::String,
         }
@@ -124,6 +129,7 @@ macro_rules! make_case_variant {
                 default: $p.default.as_ref().map(|a| a.$case_func().to_owned()),
                 value: $p.value.as_ref().map(|a| a.$case_func().to_owned()),
                 ifwith: $p.ifwith.clone(),
+                options: vec![],
                 autogen: true,
                 kind: ParamKind::String,
             });
@@ -131,14 +137,15 @@ macro_rules! make_case_variant {
     };
 }
 
-const EXCLUDED_EXTS: &'static [&'static str] = &[
+const EXCLUDED_EXTS: &[&str] = &[
     "png", "ico", "jpg", "jpeg", "avi", "gif", "mp4", "iso", "zip", "gz", "tar", "rar", "svg",
     "ttf", "woff", "woff2", "eot",
 ];
 
 lazy_static! {
-    static ref RE_IF: Regex = Regex::new(r"<% if param\.(\S+) %>").unwrap();
-    static ref RE_ENDIF: Regex = Regex::new(r"<% endif %>").unwrap();
+    static ref RE_IF: Regex = Regex::new(r"<% if .*? %>").unwrap();
+    // static ref RE_ENDIF: Regex = Regex::new(r"<% endif %>").unwrap();
+    static ref ENDIF:&'static str = "<% endif %>";
     static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*)\s*<%(.*)%>").unwrap();
 }
 
@@ -147,17 +154,15 @@ pub struct Reframe {
     param: Vec<Param>,
     rl: Editor<()>,
     path: PathBuf,
+    dry_run: bool,
 }
 
 impl Reframe {
-    pub fn open<P: AsRef<Path>>(path: P, rl: Editor<()>) -> io::Result<Self> {
+    pub fn open<P: AsRef<Path>>(path: P, rl: Editor<()>, dry_run: bool) -> io::Result<Self> {
         let mut config = read_config(path.as_ref().join("Reframe.toml"))?;
 
-        match config.project.ignore_dirs.as_mut() {
-            Some(dirs) => {
-                dirs.push(".git".to_string());
-            }
-            None => (),
+        if let Some(dirs) = config.project.ignore_dirs.as_mut() {
+            dirs.push(".git".to_string());
         }
 
         let param = vec![];
@@ -166,27 +171,34 @@ impl Reframe {
             param,
             rl,
             path: path.as_ref().to_path_buf(),
+            dry_run,
         })
     }
 
     fn input_read_string(&mut self, ask: String, dflt: String) -> String {
         let rv = self.rl.readline(&ask).unwrap_or_else(|_| dflt.clone());
-        if rv.trim().len() == 0 {
+        if rv.trim().is_empty() {
             dflt
         } else {
             rv.trim().to_owned()
         }
     }
 
-    fn param_value(param: &Vec<Param>, k: &str) -> String {
+    fn param_value(param: &[Param], k: &str) -> String {
         param
             .iter()
             .find(|a| a.key == k)
             .map(|a| a.value.as_ref().unwrap().to_owned())
-            .unwrap_or("".to_string())
+            .unwrap_or_else(|| "".to_string())
     }
 
+    #[allow(clippy::option_map_unit_fn)]
     pub fn generate<P: AsRef<Path>>(&mut self, out_dir: P) -> io::Result<String> {
+        let out_dir = if self.dry_run {
+            Path::new("/tmp").join(out_dir.as_ref())
+        } else {
+            out_dir.as_ref().to_path_buf()
+        };
         let project_name = self.input_read_string(
             format!(
                 "  ➢ {} ({}) : ",
@@ -232,45 +244,61 @@ impl Reframe {
                 "Version".bright_blue(),
                 &self.config.project.version.yellow()
             ))
-            .unwrap_or(self.config.project.version.to_owned());
+            .unwrap_or_else(|_| self.config.project.version.to_owned());
 
         if version != "" {
             self.config.project.version = version;
         }
 
         for item in &self.config.param {
-            match &item {
-                JsonValue::Object(o) => {
-                    for (k, item) in o {
-                        let ask = get_string(item, "ask", k);
-                        let dflt = get_string_option(item, "default");
+            // match &item {
+            if let JsonValue::Object(o) = &item {
+                for (k, item) in o {
+                    let ask = get_string(item, "ask", k);
+                    let dflt = get_string_option(item, "default");
+                    let mut options: Vec<String> = vec![];
+                    if let Some(JsonValue::Array(values)) = item.get("options") {
+                        options = values
+                            .iter()
+                            .map(|a| match a {
+                                JsonValue::String(a_str) => a_str.to_owned(),
+                                _ => panic!("options contains non string value `{}`", &a),
+                            })
+                            .collect();
+                    };
 
-                        let kind = if dflt.as_ref().map(|a| a.as_str()) == Some("true")
-                            || dflt.as_ref().map(|a| a.as_str()) == Some("false")
-                        {
-                            ParamKind::Bool
-                        } else {
-                            ParamKind::String
-                        };
+                    let kind = if dflt.as_ref().map(|a| a.as_str()) == Some("true")
+                        || dflt.as_ref().map(|a| a.as_str()) == Some("false")
+                    {
+                        ParamKind::Bool
+                    } else if !options.is_empty() {
+                        ParamKind::Options
+                    } else {
+                        ParamKind::String
+                    };
 
-                        let p = Param {
-                            ask: ask,
-                            key: k.clone(),
-                            default: dflt,
-                            value: None,
-                            ifwith: get_string_option(item, "if"),
-                            autogen: false,
-                            kind,
-                        };
+                    let p = Param {
+                        ask,
+                        key: k.clone(),
+                        default: dflt,
+                        value: None,
+                        ifwith: get_string_option(item, "if"),
+                        options,
+                        autogen: false,
+                        kind,
+                    };
 
-                        self.param.push(p);
-                    }
+                    self.param.push(p);
                 }
-                _ => (),
+                // }
+                // _ => (),
             }
         }
 
         let mut new_param = self.param.clone();
+
+        // dbg!(&new_param);
+        // panic!("done.");
 
         for p in new_param.iter_mut() {
             if let Some(depends) = p.ifwith.as_ref() {
@@ -281,23 +309,38 @@ impl Reframe {
 
             loop {
                 let question = if let Some(dflt) = p.default.as_ref() {
-                    format!("  ➢ {} ({}) : ", p.ask.bright_blue(), dflt.yellow())
+                    if !p.options.is_empty() {
+                        format!(
+                            "  ➢ {} [{}] ({}) : ",
+                            p.ask.bright_blue(),
+                            p.options.join("/"),
+                            dflt.yellow()
+                        )
+                    } else {
+                        format!("  ➢ {} ({}) : ", p.ask.bright_blue(), dflt.yellow())
+                    }
                 } else {
                     format!("  ➢ {} : ", p.ask.bright_blue())
                 };
 
-                let rv = self.rl.readline(&question).map_err(map_err)?;
-                let rv = if rv.trim().len() > 0 {
-                    Some(&rv)
-                } else {
-                    if p.default.as_ref().is_some() {
-                        p.default.as_ref()
-                    } else {
-                        println!("Parameter harus diisi: `{}`", &p.key);
+                let mut rv = self.rl.readline(&question).map_err(map_err)?;
+                rv = rv.trim().to_string();
+                if !rv.is_empty() {
+                    if !p.options.is_empty() && !p.options.contains(&rv) {
+                        println!(
+                            "    Value not supported `{}`, only accept [{}]",
+                            rv,
+                            p.options.join("/")
+                        );
                         continue;
                     }
-                };
-                p.value = rv.map(|a| a.to_owned());
+                } else if p.default.as_ref().is_some() {
+                    rv = p.default.as_ref().unwrap().to_owned();
+                } else {
+                    println!("    Param required: `{}`", &p.key);
+                    continue;
+                }
+                p.value = Some(rv);
                 break;
             }
 
@@ -325,7 +368,7 @@ impl Reframe {
                 .map(|a| a.value = p.value.to_owned());
         }
 
-        let out_dir = out_dir.as_ref().join(
+        let out_dir = out_dir.join(
             &self
                 .config
                 .project
@@ -407,47 +450,63 @@ impl Reframe {
         Ok(())
     }
 
-    fn process_template_str(text: String, param: &Vec<Param>, config: &Config) -> String {
+    fn process_template_str(text: String, config: &Config, param: &[Param]) -> String {
         let lines = text.split('\n');
         let mut new_lines = vec![];
-        let mut continue_until = ContUntil::new();
-        let mut skip_counter = 0;
+        let mut sl = SkipLine::new();
 
         // proses tahap #1
 
         for line in lines.clone() {
-            if continue_until.start {
-                if line.contains(&continue_until.matching) {
-                    continue_until.stop();
+            if sl.start {
+                if line.contains(&sl.matching) {
+                    sl.stop();
                 }
                 continue;
             }
 
             if RE_IF.is_match(&line) {
+                let mut if_handled = false;
                 for p in param.iter() {
                     let k = &p.key;
                     let v = p.value.as_ref().unwrap();
-                    if skip_counter > 0 {
-                        skip_counter -= 1;
-                        continue;
-                    }
+
                     if k.starts_with("with_") {
                         if v == "false" {
                             if line.contains(&format!("<% if param.{} %>", k)) {
                                 debug!("skip...");
-                                continue_until.start = true;
-                                continue_until.matching = "<% endif %>".to_string();
+                                sl.start = true;
+                                sl.matching = "<% endif %>";
                                 break;
                             }
                         } else {
-                            skip_counter = 1;
+                            new_lines.push(line.to_string());
+                            if_handled = true;
+                            break;
+                        }
+                    } else {
+                        let re_txt = format!(r#"(//|#)\s*<% if param.{}\s*==\s*"(.*)" %>"#, k);
+                        let re_if_compare = Regex::new(&re_txt).unwrap();
+                        let mut caps = re_if_compare.captures_iter(&line);
+                        if let Some(cap) = caps.next() {
+                            if &cap[2] != v.as_str() {
+                                sl.start = true;
+                                sl.matching = "<% endif %>";
+                            } else {
+                                new_lines.push(line.to_string());
+                            }
+                            if_handled = true;
                         }
                     }
                 }
-            } else {
-                if !RE_ENDIF.is_match(&line) {
-                    new_lines.push(line.to_string());
+                // apabila tidak ada param yang menghandle
+                // swallow aja semua block-nya.
+                if !if_handled {
+                    sl.start = true;
+                    sl.matching = "<% endif %>";
                 }
+            } else if !line.contains(*ENDIF) {
+                new_lines.push(line.to_string());
             }
         }
 
@@ -462,9 +521,7 @@ impl Reframe {
             new_lines2.push(Self::string_sub(line.to_owned(), config, param));
         }
 
-        let rv = new_lines2.join("\n");
-
-        rv
+        new_lines2.join("\n")
     }
 
     fn process_template<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
@@ -479,7 +536,7 @@ impl Reframe {
         )
         .to_string();
 
-        let rv = Self::process_template_str(rv, &self.param, &self.config);
+        let rv = Self::process_template_str(rv, &self.config, &self.param);
 
         let out_path = format!("{}", path.as_ref().display());
 
@@ -496,7 +553,7 @@ impl Reframe {
         Ok(())
     }
 
-    fn string_sub<'a, S>(input: S, config: &Config, param: &Vec<Param>) -> String
+    fn string_sub<'a, S>(input: S, config: &Config, param: &[Param]) -> String
     where
         S: Into<Cow<'a, str>>,
     {
@@ -640,5 +697,70 @@ mod tests {
 
         let output = Reframe::string_sub(input, &config, &param);
         assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn test_if_conditional() {
+        let input = r#"\
+        project = "$name$";
+        # <% if param.with_x %>
+        import x;
+        # <% endif %>
+        # <% if param.db == "sqlite" %>
+        import sqlite;
+        # <% endif %>
+        # <% if param.db == "mysql" %>
+        import mysql;
+        # <% endif %>
+        "#;
+
+        let expected1 = r#"\
+        project = "Conditional";
+        import sqlite;
+        "#;
+        let expected2 = r#"\
+        project = "Conditional";
+        import x;
+        import sqlite;
+        "#;
+        let expected3 = r#"\
+        project = "Conditional";
+        import mysql;
+        "#;
+
+        let name = "Conditional".to_string();
+
+        let config = Config {
+            reframe: ReframeConfig {
+                name: "My Reframe".to_string(),
+                author: "robin".to_string(),
+            },
+            project: ProjectConfig {
+                name: name.to_owned(),
+                variants: Default::default(),
+                version: "0.1.1".to_string(),
+                ignore_dirs: None,
+                finish_text: None,
+            },
+            param: vec![],
+        };
+
+        let p = Param::new("db".to_string(), "sqlite".to_owned());
+
+        let mut param = vec![];
+        param.push(p);
+
+        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        assert_eq!(output, expected1);
+
+        param.push(Param::new("with_x".to_string(), "true".to_owned()));
+        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        assert_eq!(output, expected2);
+
+        param.clear();
+        param.push(Param::new("with_x".to_string(), "false".to_owned()));
+        param.push(Param::new("db".to_string(), "mysql".to_owned()));
+        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        assert_eq!(output, expected3);
     }
 }
