@@ -68,7 +68,7 @@ fn main() {
     let source_path = if !Path::new(&source).exists() {
         debug!("source not found in local: {}", source);
         debug!("trying get from github.com/{} ...", source);
-        println!("Downloading from repo...");
+        println!(" downloading from repo...");
         let url = format!("https://github.com/{}.rf/archive/master.zip", source);
         debug!("output: {}", env::temp_dir().display());
         if let Err(e) = util::download(&url, &reframe_work_path) {
