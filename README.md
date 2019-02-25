@@ -69,9 +69,9 @@ For more detail please see working example at [anvie/basic-rust.rf](https://gith
 
 Supported case variants:
 
-* *_lower_case
-* *_snake_case
-* *_kebab_case
-* *_shout_snake_case
-* *_upper_case
-* *_camel_case
+* `*_lower_case` -> my cool app
+* `*_snake_case` -> my_cool_app
+* `*_kebab_case` -> my-cool-app
+* `*_shout_snake_case` -> MY_COOL_APP
+* `*_upper_case` -> MY COOL APP
+* `*_camel_case` -> MyCoolApp
