@@ -461,21 +461,29 @@ impl<'a> Reframe<'a> {
     }
 
     fn process_template_str(text: String, config: &Config, param: &[Param]) -> String {
-        let lines = text.split('\n');
+        let lines:Vec<&str> = text.split('\n').collect();
         let mut new_lines = vec![];
         let mut sl = SkipLine::new();
+        let len = lines.len();
+        let mut last_if_cond:&str = "";
+        let mut last_if_cond_line:usize = 0;
 
         // proses tahap #1
 
-        for line in lines.clone() {
+        for (i, line) in lines.iter().enumerate() {
             if sl.start {
                 if line.contains(&sl.matching) {
                     sl.stop();
+                }
+                if i >= len-1 {
+                    panic!("unclosed if conditional `{}` at line {}", last_if_cond.trim(), last_if_cond_line);
                 }
                 continue;
             }
 
             if RE_IF.is_match(&line) {
+                last_if_cond = line;
+                last_if_cond_line = i;
                 let mut if_handled = false;
                 for p in param.iter() {
                     let k = &p.key;
@@ -637,6 +645,24 @@ impl<'a> Reframe<'a> {
 mod tests {
     use super::*;
 
+
+    fn build_config(name:&str) -> Config {
+        Config {
+            reframe: ReframeConfig {
+                name: "My Reframe".to_string(),
+                author: "robin".to_string(),
+            },
+            project: ProjectConfig {
+                name: name.to_owned(),
+                variants: Default::default(),
+                version: "0.1.1".to_string(),
+                ignore_dirs: None,
+                finish_text: None,
+            },
+            param: vec![],
+        }
+    }
+
     #[test]
     fn test_string_sub() {
         let input = r#"\
@@ -738,22 +764,9 @@ mod tests {
         import mysql;
         "#;
 
-        let name = "Conditional".to_string();
+        let name = "Conditional";
 
-        let config = Config {
-            reframe: ReframeConfig {
-                name: "My Reframe".to_string(),
-                author: "robin".to_string(),
-            },
-            project: ProjectConfig {
-                name: name.to_owned(),
-                variants: Default::default(),
-                version: "0.1.1".to_string(),
-                ignore_dirs: None,
-                finish_text: None,
-            },
-            param: vec![],
-        };
+        let config = build_config(name);
 
         let p = Param::new("db".to_string(), "sqlite".to_owned());
 
@@ -772,5 +785,22 @@ mod tests {
         param.push(Param::new("db".to_string(), "mysql".to_owned()));
         let output = Reframe::process_template_str(input.to_string(), &config, &param);
         assert_eq!(output, expected3);
+    }
+
+    #[test]
+    #[should_panic(expected="unclosed if conditional `# <% if param.with_x %>` at line 2")]
+    fn test_unclosed_if_tag() {
+        let input = r#"\
+        project = "$name$";
+        # <% if param.with_x %>
+        import x;
+        import sqlite;
+        "#;
+
+        let config = build_config("any");
+
+        let param = vec![];
+        let _ = Reframe::process_template_str(input.to_string(), &config, &param);
+
     }
 }
