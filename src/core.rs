@@ -4,6 +4,8 @@ use regex::Regex;
 use rustyline::Editor;
 use serde_json::Value as JsonValue;
 
+use crate::util;
+
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -34,6 +36,7 @@ pub struct ProjectConfig {
     pub variants: HashMap<String, String>,
     pub version: String,
     pub ignore_dirs: Option<Vec<String>>,
+    pub ignore_files: Option<Vec<String>>,
     pub finish_text: Option<String>,
 }
 
@@ -139,13 +142,13 @@ macro_rules! make_case_variant {
 
 const EXCLUDED_EXTS: &[&str] = &[
     "png", "ico", "jpg", "jpeg", "avi", "gif", "mp4", "iso", "zip", "gz", "tar", "rar", "svg",
-    "ttf", "woff", "woff2", "eot",
+    "ttf", "woff", "woff2", "eot", "jar", "war", "mpg", "mpeg", "mp3", "m4v", "mkv", "docx",
+    "pptx", "pdf", "dmg", "wav", "webm", "m4a", "mov",
 ];
 
 lazy_static! {
     static ref RE_IF: Regex = Regex::new(r"<% if .*? %>").unwrap();
-    // static ref RE_ENDIF: Regex = Regex::new(r"<% endif %>").unwrap();
-    static ref ENDIF:&'static str = "<% endif %>";
+    static ref ENDIF: &'static str = "<% endif %>";
     static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*)\s*<%(.*)%>").unwrap();
 }
 
@@ -255,7 +258,6 @@ impl<'a> Reframe<'a> {
         }
 
         for item in &self.config.param {
-            // match &item {
             if let JsonValue::Object(o) = &item {
                 for (k, item) in o {
                     let ask = get_string(item, "ask", k);
@@ -294,8 +296,6 @@ impl<'a> Reframe<'a> {
 
                     self.param.push(p);
                 }
-                // }
-                // _ => (),
             }
         }
 
@@ -416,6 +416,7 @@ impl<'a> Reframe<'a> {
 
     /// Memproses parameter internal,
     /// ini harus dijalankan sesudah konfig diproses/parsed.
+    #[inline]
     fn process_internal_param(&mut self) {
         if let Some(text) = self.config.project.finish_text.as_ref() {
             self.config.project.finish_text =
@@ -444,6 +445,17 @@ impl<'a> Reframe<'a> {
                 debug!("`{}` ignored", &path.display());
                 continue;
             }
+            if self
+                .config
+                .project
+                .ignore_files
+                .as_ref()
+                .map(|patts| util::file_pattern_match(&tail_name, &patts[..]))
+                == Some(true)
+            {
+                debug!("`{}` ignored", &tail_name.to_string());
+                continue;
+            }
             if path.is_dir() {
                 debug!("visit: {}", &path.display());
                 let dst = dst.as_ref().join(tail_name);
@@ -461,12 +473,12 @@ impl<'a> Reframe<'a> {
     }
 
     fn process_template_str(text: String, config: &Config, param: &[Param]) -> String {
-        let lines:Vec<&str> = text.split('\n').collect();
+        let lines: Vec<&str> = text.split('\n').collect();
         let mut new_lines = vec![];
         let mut sl = SkipLine::new();
         let len = lines.len();
-        let mut last_if_cond:&str = "";
-        let mut last_if_cond_line:usize = 0;
+        let mut last_if_cond: &str = "";
+        let mut last_if_cond_line: usize = 0;
 
         // proses tahap #1
 
@@ -475,8 +487,12 @@ impl<'a> Reframe<'a> {
                 if line.contains(&sl.matching) {
                     sl.stop();
                 }
-                if i >= len-1 {
-                    panic!("unclosed if conditional `{}` at line {}", last_if_cond.trim(), last_if_cond_line);
+                if i >= len - 1 {
+                    panic!(
+                        "unclosed if conditional `{}` at line {}",
+                        last_if_cond.trim(),
+                        last_if_cond_line
+                    );
                 }
                 continue;
             }
@@ -645,8 +661,7 @@ impl<'a> Reframe<'a> {
 mod tests {
     use super::*;
 
-
-    fn build_config(name:&str) -> Config {
+    fn build_config(name: &str) -> Config {
         Config {
             reframe: ReframeConfig {
                 name: "My Reframe".to_string(),
@@ -657,6 +672,7 @@ mod tests {
                 variants: Default::default(),
                 version: "0.1.1".to_string(),
                 ignore_dirs: None,
+                ignore_files: None,
                 finish_text: None,
             },
             param: vec![],
@@ -710,6 +726,7 @@ mod tests {
                 },
                 version: "0.1.1".to_string(),
                 ignore_dirs: None,
+                ignore_files: None,
                 finish_text: None,
             },
             param: vec![],
@@ -788,7 +805,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected="unclosed if conditional `# <% if param.with_x %>` at line 2")]
+    #[should_panic(expected = "unclosed if conditional `# <% if param.with_x %>` at line 2")]
     fn test_unclosed_if_tag() {
         let input = r#"\
         project = "$name$";
@@ -801,6 +818,5 @@ mod tests {
 
         let param = vec![];
         let _ = Reframe::process_template_str(input.to_string(), &config, &param);
-
     }
 }

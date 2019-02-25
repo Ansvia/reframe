@@ -96,3 +96,40 @@ pub fn download<P: AsRef<Path>>(url: &str, out_dir: P) -> io::Result<()> {
 
     Ok(())
 }
+
+#[inline]
+pub fn file_pattern_match<S>(file_name: &str, patts: &[S]) -> bool
+where
+    S: AsRef<str>,
+{
+    let p = Path::new(file_name);
+    if let Some(ext) = p.extension() {
+        for patt in patts {
+            if patt.as_ref().contains("*.") {
+                if ext == &patt.as_ref()[2..patt.as_ref().len()] {
+                    return true;
+                }
+            } else {
+                if file_name == patt.as_ref() {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_file_pattern_match() {
+        let patts = ["README.md", "*.iml"];
+        assert_eq!(file_pattern_match("test.iml", &patts), true);
+        assert_eq!(file_pattern_match("test.txt", &patts), false);
+        assert_eq!(file_pattern_match("README.md", &patts), true);
+        assert_eq!(file_pattern_match("README.txt", &patts), false);
+        assert_eq!(file_pattern_match(".iml", &patts), false);
+    }
+}
