@@ -149,16 +149,20 @@ lazy_static! {
     static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*)\s*<%(.*)%>").unwrap();
 }
 
-pub struct Reframe {
+pub struct Reframe<'a> {
     pub config: Config,
     param: Vec<Param>,
-    rl: Editor<()>,
+    rl: &'a mut Editor<()>,
     path: PathBuf,
     dry_run: bool,
 }
 
-impl Reframe {
-    pub fn open<P: AsRef<Path>>(path: P, rl: Editor<()>, dry_run: bool) -> io::Result<Self> {
+impl<'a> Reframe<'a> {
+    pub fn open<P: AsRef<Path>>(
+        path: P,
+        rl: &'a mut Editor<()>,
+        dry_run: bool,
+    ) -> io::Result<Self> {
         let mut config = read_config(path.as_ref().join("Reframe.toml"))?;
 
         if let Some(dirs) = config.project.ignore_dirs.as_mut() {
@@ -324,7 +328,9 @@ impl Reframe {
                 };
 
                 let mut rv = self.rl.readline(&question).map_err(map_err)?;
+
                 rv = rv.trim().to_string();
+
                 if !rv.is_empty() {
                     if !p.options.is_empty() && !p.options.contains(&rv) {
                         println!(
@@ -340,7 +346,11 @@ impl Reframe {
                     println!("    Param required: `{}`", &p.key);
                     continue;
                 }
+
+                self.rl.add_history_entry(rv.as_ref());
+
                 p.value = Some(rv);
+
                 break;
             }
 
@@ -553,9 +563,9 @@ impl Reframe {
         Ok(())
     }
 
-    fn string_sub<'a, S>(input: S, config: &Config, param: &[Param]) -> String
+    fn string_sub<'b, S>(input: S, config: &Config, param: &[Param]) -> String
     where
-        S: Into<Cow<'a, str>>,
+        S: Into<Cow<'b, str>>,
     {
         let mut rep = input.into().into_owned();
         if !rep.contains('$') {

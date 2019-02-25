@@ -91,11 +91,13 @@ fn main() {
 
     let mut rl = Editor::<()>::new();
 
-    if rl.load_history("/tmp/reframe_history~").is_err() {
+    let history_path = env::temp_dir().join(".reframe~");
+
+    if rl.load_history(&history_path).is_err() {
         debug!("no history");
     }
 
-    let mut rf = Reframe::open(&source_path, rl, dry_run).expect("Cannot open dir");
+    let mut rf = Reframe::open(&source_path, &mut rl, dry_run).expect("Cannot open dir");
 
     match rf.generate(".") {
         Ok(out_name) => {
@@ -112,4 +114,5 @@ fn main() {
         }
         Err(e) => eprintln!("{}: {}", "ERROR".red(), e),
     }
+    rl.save_history(&history_path).expect("cannot save history");
 }
