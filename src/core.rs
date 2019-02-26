@@ -138,6 +138,23 @@ macro_rules! make_case_variant {
             });
         )*
     };
+    ($p:ident, $param:expr, [ $( [$case:expr, $case_func:ident], )* ] ) => {
+        make_case_variant!($p, $param, [ $( [$case, $case_func] ),* ])
+    }
+}
+
+macro_rules! make_case_variants_project {
+    ($me:ident, $key:ident, [ $( [$case:expr, $case_func:ident] ),* ] ) => {
+        $(
+            $me.config.project.variants.insert(
+                format!("{}_{}", stringify!($key), $case),
+                $me.config.project.$key.$case_func(),
+            );
+        )*
+    };
+    ($me:ident, $key:ident, [ $( [$case:expr, $case_func:ident], )* ] ) => {
+        make_case_variants_project!($me, $key, [ $( [$case, $case_func] ),* ])
+    }
 }
 
 const EXCLUDED_EXTS: &[&str] = &[
@@ -219,30 +236,14 @@ impl<'a> Reframe<'a> {
             self.config.project.name = project_name;
         }
 
-        self.config.project.variants.insert(
-            "name_lower_case".to_string(),
-            self.config.project.name.to_lowercase(),
-        );
-        self.config.project.variants.insert(
-            "name_upper_case".to_string(),
-            self.config.project.name.to_uppercase(),
-        );
-        self.config.project.variants.insert(
-            "name_snake_case".to_string(),
-            self.config.project.name.to_snake_case(),
-        );
-        self.config.project.variants.insert(
-            "name_kebab_case".to_string(),
-            self.config.project.name.to_kebab_case(),
-        );
-        self.config.project.variants.insert(
-            "name_camel_case".to_string(),
-            self.config.project.name.to_camel_case(),
-        );
-        self.config.project.variants.insert(
-            "name_shout_snake_case".to_string(),
-            self.config.project.name.to_shouty_snake_case(),
-        );
+        make_case_variants_project!(self, name, [
+            ["lower_case", to_lowercase],
+            ["upper_case", to_uppercase],
+            ["snake_case", to_snake_case],
+            ["kebab_case", to_kebab_case],
+            ["camel_case", to_camel_case],
+            ["shout_snake_case", to_shouty_snake_case],
+        ]);
 
         let version = self
             .rl
@@ -367,7 +368,7 @@ impl<'a> Reframe<'a> {
                         ["snake_case", to_snake_case],
                         ["kebab_case", to_kebab_case],
                         ["camel_case", to_camel_case],
-                        ["shout_snake_case", to_shouty_snake_case]
+                        ["shout_snake_case", to_shouty_snake_case],
                     ]
                 );
             }
