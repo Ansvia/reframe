@@ -113,6 +113,12 @@ where
                 return true;
             }
         }
+    } else {
+        for patt in patts {
+            if file_name == patt.as_ref() {
+                return true;
+            }
+        }
     }
     false
 }
@@ -176,11 +182,12 @@ mod tests {
 
     #[test]
     fn test_file_pattern_match() {
-        let patts = ["README.md", "*.iml"];
+        let patts = ["README.md", "*.iml", ".packages"];
         assert_eq!(file_pattern_match("test.iml", &patts), true);
         assert_eq!(file_pattern_match("test.txt", &patts), false);
         assert_eq!(file_pattern_match("README.md", &patts), true);
         assert_eq!(file_pattern_match("README.txt", &patts), false);
+        assert_eq!(file_pattern_match(".packages", &patts), true);
         assert_eq!(file_pattern_match(".iml", &patts), false);
     }
 
