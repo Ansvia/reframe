@@ -32,11 +32,16 @@ fn print_usage(args: &[String]) {
     let exe_name = path.file_name().unwrap().to_str().unwrap();
     println!("Usage: ");
     println!("       ");
-    println!("       $ {} [SOURCE]", exe_name);
+    println!("       $ {} [SOURCE] [OPTIONS]", exe_name);
     println!();
-    println!("Example:");
+    println!("OPTIONS:");
+    println!();
+    println!("       --dry-run     For test source, don't touch current directory.");
+    println!();
+    println!("Examples:");
     println!();
     println!("       $ {} anvie/basic-rust", exe_name);
+    println!("       $ {} anvie/basic-rust --dry-run", exe_name);
     println!();
 }
 
@@ -57,7 +62,7 @@ fn main() {
         return;
     }
 
-    let dry_run = args.contains(&"--dryrun".to_string());
+    let dry_run = args.contains(&"--dry-run".to_string());
 
     if dry_run {
         debug!("DRY RUN MODE");

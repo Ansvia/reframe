@@ -136,7 +136,7 @@ pub fn compare_version(version_a: &str, version_b: &str) -> i32 {
     #[inline(always)]
     fn split(v: &str) -> (i32, i32, i32) {
         let s: Vec<&str> = v.split('.').collect();
-        let s1 = if s.len() > 0 {
+        let s1 = if !s.is_empty() {
             s[0].parse::<i32>().unwrap_or(0) + 1000
         } else {
             0
