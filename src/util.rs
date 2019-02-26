@@ -3,7 +3,7 @@ use zip::ZipArchive;
 use std::{
     fs::{self, File},
     io,
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 fn extract_zip<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
@@ -109,14 +109,26 @@ where
                 if ext == &patt.as_ref()[2..patt.as_ref().len()] {
                     return true;
                 }
-            } else {
-                if file_name == patt.as_ref() {
-                    return true;
-                }
+            } else if file_name == patt.as_ref() {
+                return true;
             }
         }
     }
     false
+}
+
+#[inline]
+pub fn path_to_relative<P: AsRef<Path>>(path: P, root: P) -> PathBuf {
+    path.as_ref()
+        .strip_prefix(&root)
+        .unwrap_or_else(|_| {
+            panic!(
+                "Cannot get relative path for `{}` from `{}`",
+                path.as_ref().display(),
+                root.as_ref().display()
+            )
+        })
+        .to_owned()
 }
 
 #[cfg(test)]
@@ -131,5 +143,21 @@ mod tests {
         assert_eq!(file_pattern_match("README.md", &patts), true);
         assert_eq!(file_pattern_match("README.txt", &patts), false);
         assert_eq!(file_pattern_match(".iml", &patts), false);
+    }
+
+    #[test]
+    fn test_path_to_relative() {
+        let root = "/tmp";
+        assert_eq!(
+            &format!("{}", path_to_relative("/tmp/satu/dua", &root).display()),
+            "satu/dua"
+        );
+        assert_eq!(
+            &format!(
+                "{}",
+                path_to_relative("/tmp/satu/dua/tiga", &root).display()
+            ),
+            "satu/dua/tiga"
+        );
     }
 }

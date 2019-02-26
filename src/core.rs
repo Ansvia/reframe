@@ -21,6 +21,15 @@ pub struct Config {
     pub reframe: ReframeConfig,
     pub project: ProjectConfig,
     pub param: Vec<JsonValue>,
+    #[serde(rename = "present")]
+    pub presents: Vec<Present>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Present {
+    pub path: String,
+    #[serde(rename = "if")]
+    pub ifcond: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -236,14 +245,18 @@ impl<'a> Reframe<'a> {
             self.config.project.name = project_name;
         }
 
-        make_case_variants_project!(self, name, [
-            ["lower_case", to_lowercase],
-            ["upper_case", to_uppercase],
-            ["snake_case", to_snake_case],
-            ["kebab_case", to_kebab_case],
-            ["camel_case", to_camel_case],
-            ["shout_snake_case", to_shouty_snake_case],
-        ]);
+        make_case_variants_project!(
+            self,
+            name,
+            [
+                ["lower_case", to_lowercase],
+                ["upper_case", to_uppercase],
+                ["snake_case", to_snake_case],
+                ["kebab_case", to_kebab_case],
+                ["camel_case", to_camel_case],
+                ["shout_snake_case", to_shouty_snake_case],
+            ]
+        );
 
         let version = self
             .rl
@@ -430,10 +443,11 @@ impl<'a> Reframe<'a> {
 
         let dirent = fs::read_dir(&src)?;
 
-        for item in dirent {
+        'dirwalk: for item in dirent {
             let entry = item?;
             let path = entry.path();
             trace!("path: {}", &path.display());
+
             let tail_name = path.file_name().unwrap().to_str().unwrap();
             if self
                 .config
@@ -457,6 +471,40 @@ impl<'a> Reframe<'a> {
                 debug!("`{}` ignored", &tail_name.to_string());
                 continue;
             }
+
+            // check presents
+            for present in &self.config.presents {
+                if util::path_to_relative(&path, &self.path).as_path() == Path::new(&present.path) {
+                    let mut no_match = 0;
+                    for param in &self.param {
+                        if param.key == present.ifcond {
+                            if param.kind == ParamKind::Bool {
+                                if let Some("false") = param.value.as_ref().map(|a| a.as_ref()) {
+                                    continue 'dirwalk;
+                                }
+                            }
+                        } else if present.ifcond.contains('=')
+                            && present.ifcond.starts_with(&param.key)
+                        {
+                            if let Some(value) = param.value.as_ref() {
+                                if format!("{} == {}", param.key, value) != present.ifcond {
+                                    continue 'dirwalk;
+                                }
+                            } else {
+                                // tidak terdefinisikan.
+                                continue 'dirwalk;
+                            }
+                        } else {
+                            no_match += 1;
+                        }
+                    }
+                    if no_match == self.param.len() {
+                        // tidak terdefinisikan, ignore ajah mungkin dependensinya tidak memenuhi sarat.
+                        continue 'dirwalk;
+                    }
+                }
+            }
+
             if path.is_dir() {
                 debug!("visit: {}", &path.display());
                 let dst = dst.as_ref().join(tail_name);
@@ -504,7 +552,13 @@ impl<'a> Reframe<'a> {
                 let mut if_handled = false;
                 for p in param.iter() {
                     let k = &p.key;
-                    let v = p.value.as_ref().unwrap();
+                    let v = match p.value.as_ref() {
+                        Some(v) => v,
+                        None => {
+                            debug!("no value with key: {}", k);
+                            continue;
+                        }
+                    };
 
                     if k.starts_with("with_") {
                         if v == "false" {
@@ -677,6 +731,7 @@ mod tests {
                 finish_text: None,
             },
             param: vec![],
+            presents: vec![],
         }
     }
 
@@ -731,6 +786,7 @@ mod tests {
                 finish_text: None,
             },
             param: vec![],
+            presents: vec![],
         };
 
         let p = Param::new("a".to_string(), "Jumping Fox".to_string());

@@ -1,6 +1,6 @@
 [package]
 name = "reframe"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["robin <robin@ansvia.com>"]
 edition = "2018"
 description = "Reframe is Light, Fast & Simple project scaffolder tool."
