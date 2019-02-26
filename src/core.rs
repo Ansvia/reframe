@@ -36,6 +36,7 @@ pub struct Present {
 pub struct ReframeConfig {
     pub name: String,
     pub author: String,
+    pub min_version: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -193,6 +194,17 @@ impl<'a> Reframe<'a> {
         dry_run: bool,
     ) -> io::Result<Self> {
         let mut config = read_config(path.as_ref().join("Reframe.toml"))?;
+
+        // check min version
+        if util::compare_version(&config.reframe.min_version, env!("CARGO_PKG_VERSION")) < 0 {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "Source require min Reframe version {}, please upgrade your Reframe.",
+                    config.reframe.min_version
+                ),
+            ))?;
+        }
 
         if let Some(dirs) = config.project.ignore_dirs.as_mut() {
             dirs.push(".git".to_string());
@@ -718,6 +730,7 @@ mod tests {
             reframe: ReframeConfig {
                 name: "My Reframe".to_string(),
                 author: "robin".to_string(),
+                min_version: "0.1.0".to_string(),
             },
             project: ProjectConfig {
                 name: name.to_owned(),
@@ -764,6 +777,7 @@ mod tests {
             reframe: ReframeConfig {
                 name: "My Reframe".to_string(),
                 author: "robin".to_string(),
+                min_version: "0.1.0".to_string(),
             },
             project: ProjectConfig {
                 name: name.to_owned(),

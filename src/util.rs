@@ -131,6 +131,45 @@ pub fn path_to_relative<P: AsRef<Path>>(path: P, root: P) -> PathBuf {
         .to_owned()
 }
 
+/// komparasi versi, hanya support max 3 level.
+pub fn compare_version(version_a: &str, version_b: &str) -> i32 {
+    #[inline(always)]
+    fn split(v: &str) -> (i32, i32, i32) {
+        let s: Vec<&str> = v.split('.').collect();
+        let s1 = if s.len() > 0 {
+            s[0].parse::<i32>().unwrap_or(0) + 1000
+        } else {
+            0
+        };
+
+        let s2 = if s.len() > 1 {
+            s[1].parse::<i32>().unwrap_or(0) + 100
+        } else {
+            0
+        };
+
+        let s3 = if s.len() > 2 {
+            s[2].parse::<i32>().unwrap_or(0) + 10
+        } else {
+            0
+        };
+
+        (s1, s2, s3)
+    }
+
+    let (s1, s2, s3) = split(version_a);
+    let (y1, y2, y3) = split(version_b);
+
+    let rv = (y1 + y2 + y3) - (s1 + s2 + s3);
+    if rv > 1 {
+        1
+    } else if rv < -1 {
+        -1
+    } else {
+        rv
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -160,4 +199,25 @@ mod tests {
             "satu/dua/tiga"
         );
     }
+
+    #[test]
+    fn test_compare_version() {
+        assert_eq!(compare_version("0.0.1", "0.0.2"), 1);
+        assert_eq!(compare_version("0.0.3", "0.0.1"), -1);
+        assert_eq!(compare_version("1.2.3", "1.2.3"), 0);
+        assert_eq!(compare_version("0.2.1", "0.1.1"), -1);
+        assert_eq!(compare_version("0.2.1", "3.1.1"), 1);
+        assert_eq!(compare_version("4.2.1", "4.1.1"), -1);
+        assert_eq!(compare_version("0.0.0", "0.0.12"), 1);
+        assert_eq!(compare_version("0.1.2", "0.1.2"), 0);
+        assert_eq!(compare_version("1.0.0", "0.0.0"), -1);
+        assert_eq!(compare_version("1.1.2", "1.2.0"), -1);
+        assert_eq!(compare_version("1", "2"), 1);
+    }
+
+    #[test]
+    fn test_compare_version_empty() {
+        assert_eq!(compare_version("0.2.3", ""), -1);
+    }
+
 }

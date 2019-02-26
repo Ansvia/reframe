@@ -97,7 +97,13 @@ fn main() {
         debug!("no history");
     }
 
-    let mut rf = Reframe::open(&source_path, &mut rl, dry_run).expect("Cannot open dir");
+    let mut rf = match Reframe::open(&source_path, &mut rl, dry_run) {
+        Ok(rf) => rf,
+        Err(e) => {
+            eprintln!("{}", format!("{}", e).yellow());
+            std::process::exit(2);
+        }
+    };
 
     match rf.generate(".") {
         Ok(out_name) => {
