@@ -315,9 +315,6 @@ impl<'a> Reframe<'a> {
 
         let mut new_param = self.param.clone();
 
-        // dbg!(&new_param);
-        // panic!("done.");
-
         for p in new_param.iter_mut() {
             if let Some(depends) = p.ifwith.as_ref() {
                 if Self::param_value(&self.param, depends) == "false" {
@@ -348,7 +345,7 @@ impl<'a> Reframe<'a> {
                 if !rv.is_empty() {
                     if !p.options.is_empty() && !p.options.contains(&rv) {
                         println!(
-                            "    Value not supported `{}`, only accept [{}]",
+                            "    Value not supported `{}`, only accept {}",
                             rv,
                             p.options.join("/")
                         );
@@ -499,7 +496,7 @@ impl<'a> Reframe<'a> {
                         }
                     }
                     if no_match == self.param.len() {
-                        // tidak terdefinisikan, ignore ajah mungkin dependensinya tidak memenuhi sarat.
+                        // param tidak terdefinisikan.
                         continue 'dirwalk;
                     }
                 }
