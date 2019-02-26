@@ -177,6 +177,7 @@ lazy_static! {
     static ref RE_IF: Regex = Regex::new(r"<% if .*? %>").unwrap();
     static ref ENDIF: &'static str = "<% endif %>";
     static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*)\s*<%(.*)%>").unwrap();
+    static ref RE_TEMPLATE_EXT: Regex = Regex::new(r"(.*)\.template(.\s*)?").unwrap();
 }
 
 pub struct Reframe<'a> {
@@ -713,7 +714,17 @@ impl<'a> Reframe<'a> {
                         continue;
                     }
                 }
-                self.process_template(path)?;
+
+                self.process_template(&path)?;
+
+                // if template file like `README.template.md` then rename to `README.md`.
+                // overwrite existing.
+                let path_str = format!("{}", path.display());
+                if RE_TEMPLATE_EXT.is_match(&path_str) {
+                    let new_path = RE_TEMPLATE_EXT.replace(&path_str, "$1$2").into_owned();
+                    debug!("renaming `{}` to `{}`", &path_str, &new_path);
+                    fs::rename(&path_str, &new_path)?;
+                }
             }
         }
 
