@@ -176,7 +176,7 @@ const EXCLUDED_EXTS: &[&str] = &[
 lazy_static! {
     static ref RE_IF: Regex = Regex::new(r"<% if .*? %>").unwrap();
     static ref ENDIF: &'static str = "<% endif %>";
-    static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*)\s*<%(.*)%>").unwrap();
+    static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*|--)\s*<%(.*)%>").unwrap();
     static ref RE_TEMPLATE_EXT: Regex = Regex::new(r"(.*)\.template(.\s*)?").unwrap();
 }
 
@@ -584,7 +584,7 @@ impl<'a> Reframe<'a> {
                             break;
                         }
                     } else {
-                        let re_txt = format!(r#"(//|#)\s*<% if param.{}\s*==\s*"(.*)" %>"#, k);
+                        let re_txt = format!(r#"(//|#|--)\s*<% if param.{}\s*==\s*"(.*)" %>"#, k);
                         let re_if_compare = Regex::new(&re_txt).unwrap();
                         let mut caps = re_if_compare.captures_iter(&line);
                         if let Some(cap) = caps.next() {
@@ -881,6 +881,39 @@ mod tests {
         param.push(Param::new("db".to_string(), "mysql".to_owned()));
         let output = Reframe::process_template_str(input.to_string(), &config, &param);
         assert_eq!(output, expected3);
+    }
+
+    #[test]
+    fn test_if_conditional_comment_mark() {
+        let input = r#"\
+        project = "$name$";
+        -- <% if param.with_x %>
+        import x;
+        -- <% endif %>
+        // <% if param.db == "sqlite" %>
+        import sqlite;
+        // <% endif %>
+        # <% if param.db == "mysql" %>
+        import mysql;
+        # <% endif %>
+        "#;
+
+        let expected1 = r#"\
+        project = "Conditional";
+        import sqlite;
+        "#;
+
+        let name = "Conditional";
+
+        let config = build_config(name);
+
+        let p = Param::new("db".to_string(), "sqlite".to_owned());
+
+        let mut param = vec![];
+        param.push(p);
+
+        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        assert_eq!(output, expected1);
     }
 
     #[test]
