@@ -74,9 +74,13 @@ fn main() {
         debug!("source not found in local: {}", source);
         debug!("trying get from github.com/{} ...", source);
         println!(" downloading from repo...");
-        let url = format!("https://github.com/{}.rf/archive/master.zip", source);
+        let url = format!(
+            "https://github.com/{}.rf/archive/master.zip?nocache={}",
+            source,
+            util::get_current_time_millis()
+        );
         debug!("output: {}", env::temp_dir().display());
-        if let Err(e) = util::download(&url, &reframe_work_path) {
+        if let Err(e) = util::download(&url, &reframe_work_path, "master.zip") {
             eprintln!(
                 "😭 {} {}, while pulling from repo for `{}`",
                 "FAILED:".red(),

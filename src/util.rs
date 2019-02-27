@@ -4,6 +4,7 @@ use std::{
     fs::{self, File},
     io,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 fn extract_zip<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
@@ -59,11 +60,11 @@ fn extract_zip<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
     Ok(())
 }
 
-/// Download data from repo
-pub fn download<P: AsRef<Path>>(url: &str, out_dir: P) -> io::Result<()> {
+/// Download data from internet.
+pub fn download<P: AsRef<Path>>(url: &str, out_dir: P, out_file_name: &str) -> io::Result<()> {
     fs::create_dir_all(&out_dir)?;
 
-    let out_path = out_dir.as_ref().join("master.zip");
+    let out_path = out_dir.as_ref().join(out_file_name);
 
     {
         let mut w = File::create(&out_path)?;
@@ -174,6 +175,15 @@ pub fn compare_version(version_a: &str, version_b: &str) -> i32 {
     } else {
         rv
     }
+}
+
+/// Mendapatkan timestamp waktu terkini.
+pub fn get_current_time_millis() -> u64 {
+    let start = SystemTime::now();
+    start
+        .duration_since(UNIX_EPOCH)
+        .expect("cannot get time duration since epoch")
+        .as_millis() as u64
 }
 
 #[cfg(test)]

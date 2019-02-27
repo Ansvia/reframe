@@ -21,7 +21,7 @@ pub struct Config {
     pub reframe: ReframeConfig,
     pub project: ProjectConfig,
     pub param: Vec<JsonValue>,
-    #[serde(rename = "present")]
+    #[serde(rename = "present", default = "Vec::new")]
     pub presents: Vec<Present>,
 }
 
@@ -111,7 +111,7 @@ struct Param {
     pub value: Option<String>,
     #[serde(rename = "if")]
     pub ifwith: Option<String>,
-    #[serde(default = "Vec::<String>::new")]
+    #[serde(default = "Vec::new")]
     pub options: Vec<String>,
     pub autogen: bool,
     pub kind: ParamKind,
