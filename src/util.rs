@@ -178,17 +178,22 @@ pub fn compare_version(version_a: &str, version_b: &str) -> i32 {
 }
 
 /// Mendapatkan timestamp waktu terkini.
-pub fn get_current_time_millis() -> u64 {
+pub fn get_current_time_millis() -> u128 {
     let start = SystemTime::now();
-    start
+    let since_epoch = start
         .duration_since(UNIX_EPOCH)
-        .expect("cannot get time duration since epoch")
-        .as_millis() as u64
+        .expect("cannot get time duration since epoch");
+    since_epoch.as_secs() as u128 * 1000 + since_epoch.subsec_millis() as u128
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_get_current_time_millis() {
+        assert_ne!(get_current_time_millis(), 0);
+    }
 
     #[test]
     fn test_file_pattern_match() {
