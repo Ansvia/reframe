@@ -579,9 +579,7 @@ impl<'a> Reframe<'a> {
                                 break;
                             }
                         } else {
-                            new_lines.push(line.to_string());
                             if_handled = true;
-                            break;
                         }
                     } else {
                         let re_txt = format!(r#"(//|#|--)\s*<% if param.{}\s*==\s*"(.*)" %>"#, k);
@@ -592,7 +590,7 @@ impl<'a> Reframe<'a> {
                                 sl.start = true;
                                 sl.matching = "<% endif %>";
                             } else {
-                                new_lines.push(line.to_string());
+                                new_lines.push(line.to_owned());
                             }
                             if_handled = true;
                         }
@@ -603,9 +601,11 @@ impl<'a> Reframe<'a> {
                 if !if_handled {
                     sl.start = true;
                     sl.matching = "<% endif %>";
+                } else {
+                    new_lines.push(line.to_owned());
                 }
             } else if !line.contains(*ENDIF) {
-                new_lines.push(line.to_string());
+                new_lines.push(line.to_owned());
             }
         }
 
@@ -911,6 +911,37 @@ mod tests {
 
         let mut param = vec![];
         param.push(p);
+        param.push(Param::new("with_x".to_string(), "false".to_owned()));
+
+        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        assert_eq!(output, expected1);
+    }
+
+    #[test]
+    fn test_if_conditional_sql() {
+        let input = r#"\
+        -- mulai akun
+        -- <% if param.with_account %>
+        CREATE TABLE accounts (
+            id BIGSERIAL PRIMARY KEY,
+            full_name VARCHAR NOT NULL,
+            email VARCHAR NOT NULL
+        );
+        -- <% endif %>
+        -- selesai
+        "#;
+
+        let expected1 = r#"\
+        -- mulai akun
+        -- selesai
+        "#;
+
+        let name = "Conditional";
+
+        let config = build_config(name);
+
+        let mut param = vec![];
+        param.push(Param::new("with_account".to_string(), "false".to_owned()));
 
         let output = Reframe::process_template_str(input.to_string(), &config, &param);
         assert_eq!(output, expected1);
