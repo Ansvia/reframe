@@ -191,11 +191,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_current_time_millis() {
-        assert_ne!(get_current_time_millis(), 0);
-    }
-
-    #[test]
     fn test_file_pattern_match() {
         let patts = ["README.md", "*.iml", ".packages"];
         assert_eq!(file_pattern_match("test.iml", &patts), true);
@@ -242,4 +237,8 @@ mod tests {
         assert_eq!(compare_version("0.2.3", ""), -1);
     }
 
+    #[test]
+    fn test_get_current_time_millis() {
+        assert_ne!(get_current_time_millis(), 0);
+    }
 }
