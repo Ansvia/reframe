@@ -183,7 +183,7 @@ pub fn get_current_time_millis() -> u128 {
     let since_epoch = start
         .duration_since(UNIX_EPOCH)
         .expect("cannot get time duration since epoch");
-    since_epoch.as_secs() as u128 * 1000 + since_epoch.subsec_millis() as u128
+    u128::from(since_epoch.as_secs()) * 1000 + u128::from(since_epoch.subsec_millis())
 }
 
 #[cfg(test)]
