@@ -65,7 +65,9 @@ Example:
 
     $ reframe agus/unicorn
 
-For more detail please see working example at [anvie/basic-rust.rf](https://github.com/anvie/basic-rust.rf).
+For more detail please see working examples:
+* [anvie/basic-rust.rf](https://github.com/anvie/basic-rust.rf).
+* [anvie/hello-world-py.rf](https://github.com/anvie/hello-world-py.rf)
 
 Supported case variants:
 
