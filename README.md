@@ -77,3 +77,12 @@ Supported case variants:
 * `*_shout_snake_case` -> MY_COOL_APP
 * `*_upper_case` -> MY COOL APP
 * `*_camel_case` -> MyCoolApp
+
+"Ready for Work" Sources
+-----------------------
+
+* [ansvia/mainframe.rf](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
+
+
+
+
