@@ -78,7 +78,7 @@ Supported case variants:
 * `*_upper_case` -> MY COOL APP
 * `*_camel_case` -> MyCoolApp
 
-"Ready for Work" Sources
+"Ready for Work" sources
 -----------------------
 
 * [ansvia/mainframe.rf](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
