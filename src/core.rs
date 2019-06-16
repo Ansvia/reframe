@@ -413,6 +413,7 @@ impl<'a> Reframe<'a> {
         );
 
         // process finish_text
+        debug!("processing finish text..");
         self.process_internal_param();
 
         trace!(
@@ -421,6 +422,7 @@ impl<'a> Reframe<'a> {
             out_dir.display()
         );
 
+        debug!("remove dir {}", &out_dir.display());
         let _ = fs::remove_dir_all(&out_dir);
 
         self.copy_dir(self.path.as_path(), out_dir.as_ref())?;
@@ -428,12 +430,16 @@ impl<'a> Reframe<'a> {
         debug!("processing dir: {}", &out_dir.display());
         self.process_dir(&out_dir)?;
 
-        // hapus file Reframe.toml
+        // remove Reframe.toml file
+        debug!("remove Reframe.toml ...");
         let path = out_dir.join("Reframe.toml");
         fs::remove_file(&path)?;
 
         // hapus directory `load.reframe` kalo ada.
+        debug!("remove load.reframe dir if any");
         let _ = fs::remove_dir_all(out_dir.join("load.reframe"));
+
+        debug!("done.");
 
         Ok(format!("{}", out_dir.display()))
     }
