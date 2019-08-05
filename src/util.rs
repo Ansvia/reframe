@@ -167,7 +167,11 @@ pub fn compare_version(version_a: &str, version_b: &str) -> i32 {
     let (s1, s2, s3) = split(version_a);
     let (y1, y2, y3) = split(version_b);
 
-    let rv = (y1 + y2 + y3) - (s1 + s2 + s3);
+    let v_a: i32 = format!("{}{}{}", y1, y2, y3).parse().unwrap_or(0);
+    let v_b: i32 = format!("{}{}{}", s1, s2, s3).parse().unwrap_or(0);
+
+    let rv = v_a - v_b;
+
     if rv > 1 {
         1
     } else if rv < -1 {
@@ -228,7 +232,8 @@ mod tests {
         assert_eq!(compare_version("0.0.0", "0.0.12"), 1);
         assert_eq!(compare_version("0.1.2", "0.1.2"), 0);
         assert_eq!(compare_version("1.0.0", "0.0.0"), -1);
-        assert_eq!(compare_version("1.1.2", "1.2.0"), -1);
+        assert_eq!(compare_version("1.1.2", "1.2.0"), 1);
+        assert_eq!(compare_version("0.1.8", "0.2.0"), 1);
         assert_eq!(compare_version("1", "2"), 1);
     }
 

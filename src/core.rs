@@ -876,7 +876,7 @@ mod tests {
             ]
         );
 
-        let output = Reframe::string_sub(input, &config, &param);
+        let output = Reframe::string_sub(input, &config, &param, &[]);
         assert_eq!(output, expected);
     }
 
@@ -918,17 +918,17 @@ mod tests {
         let mut param = vec![];
         param.push(p);
 
-        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        let output = Reframe::process_template_str(input.to_string(), &config, &param, &[]);
         assert_eq!(output, expected1);
 
         param.push(Param::new("with_x".to_string(), "true".to_owned()));
-        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        let output = Reframe::process_template_str(input.to_string(), &config, &param, &[]);
         assert_eq!(output, expected2);
 
         param.clear();
         param.push(Param::new("with_x".to_string(), "false".to_owned()));
         param.push(Param::new("db".to_string(), "mysql".to_owned()));
-        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        let output = Reframe::process_template_str(input.to_string(), &config, &param, &[]);
         assert_eq!(output, expected3);
     }
 
@@ -962,7 +962,7 @@ mod tests {
         param.push(p);
         param.push(Param::new("with_x".to_string(), "false".to_owned()));
 
-        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        let output = Reframe::process_template_str(input.to_string(), &config, &param, &[]);
         assert_eq!(output, expected1);
     }
 
@@ -992,7 +992,7 @@ mod tests {
         let mut param = vec![];
         param.push(Param::new("with_account".to_string(), "false".to_owned()));
 
-        let output = Reframe::process_template_str(input.to_string(), &config, &param);
+        let output = Reframe::process_template_str(input.to_string(), &config, &param, &[]);
         assert_eq!(output, expected1);
     }
 
@@ -1009,6 +1009,6 @@ mod tests {
         let config = build_config("any");
 
         let param = vec![];
-        let _ = Reframe::process_template_str(input.to_string(), &config, &param);
+        let _ = Reframe::process_template_str(input.to_string(), &config, &param, &[]);
     }
 }
