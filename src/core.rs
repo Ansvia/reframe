@@ -389,7 +389,7 @@ impl<'a> Reframe<'a> {
                     continue;
                 }
 
-                self.rl.add_history_entry(rv.as_ref());
+                self.rl.add_history_entry(rv.clone());
 
                 p.value = Some(rv);
 
