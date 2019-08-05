@@ -77,3 +77,8 @@ Supported case variants:
 * `*_shout_snake_case` -> MY_COOL_APP
 * `*_upper_case` -> MY COOL APP
 * `*_camel_case` -> MyCoolApp
+
+You can also use builtin variables:
+
+* `year` -> Print current year, eg: 2019.
+* `month_name` -> Print current month, eg: July

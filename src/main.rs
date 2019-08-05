@@ -13,6 +13,7 @@ extern crate reqwest;
 extern crate zip;
 #[macro_use]
 extern crate lazy_static;
+extern crate chrono;
 
 mod core;
 mod util;

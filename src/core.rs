@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use colored::*;
 use heck::{CamelCase, KebabCase, ShoutySnakeCase, SnakeCase};
 use regex::Regex;
@@ -133,6 +134,11 @@ impl Param {
     }
 }
 
+pub(crate) struct BuiltinVar {
+    pub key: &'static str,
+    pub replacer: Box<(Fn(&str) -> String)>,
+}
+
 macro_rules! make_case_variant {
     ($p:ident, $param:expr, [ $( [$case:expr, $case_func:ident] ),* ] ) => {
         $(
@@ -183,6 +189,7 @@ lazy_static! {
 pub struct Reframe<'a> {
     pub config: Config,
     param: Vec<Param>,
+    builtin_vars: Vec<BuiltinVar>,
     rl: &'a mut Editor<()>,
     path: PathBuf,
     dry_run: bool,
@@ -211,10 +218,21 @@ impl<'a> Reframe<'a> {
             dirs.push(".git".to_string());
         }
 
+        let mut builtin_vars = vec![];
+        builtin_vars.push(BuiltinVar {
+            key: "year",
+            replacer: Box::new(|_| Utc::now().format("%Y").to_string()),
+        });
+        builtin_vars.push(BuiltinVar {
+            key: "month_name",
+            replacer: Box::new(|_| Utc::now().format("%B").to_string()),
+        });
+
         let param = vec![];
         Ok(Self {
             config,
             param,
+            builtin_vars,
             rl,
             path: path.as_ref().to_path_buf(),
             dry_run,
@@ -449,8 +467,12 @@ impl<'a> Reframe<'a> {
     #[inline]
     fn process_internal_param(&mut self) {
         if let Some(text) = self.config.project.finish_text.as_ref() {
-            self.config.project.finish_text =
-                Some(Self::string_sub(text, &self.config, &self.param));
+            self.config.project.finish_text = Some(Self::string_sub(
+                text,
+                &self.config,
+                &self.param,
+                &self.builtin_vars,
+            ));
         }
     }
 
@@ -537,7 +559,12 @@ impl<'a> Reframe<'a> {
         Ok(())
     }
 
-    fn process_template_str(text: String, config: &Config, param: &[Param]) -> String {
+    fn process_template_str(
+        text: String,
+        config: &Config,
+        param: &[Param],
+        builtin_vars: &[BuiltinVar],
+    ) -> String {
         let lines: Vec<&str> = text.split('\n').collect();
         let mut new_lines = vec![];
         let mut sl = SkipLine::new();
@@ -623,7 +650,12 @@ impl<'a> Reframe<'a> {
             if RE_SYNTAX_MARK.is_match(&line) {
                 continue;
             }
-            new_lines2.push(Self::string_sub(line.to_owned(), config, param));
+            new_lines2.push(Self::string_sub(
+                line.to_owned(),
+                config,
+                param,
+                builtin_vars,
+            ));
         }
 
         new_lines2.join("\n")
@@ -641,7 +673,7 @@ impl<'a> Reframe<'a> {
         )
         .to_string();
 
-        let rv = Self::process_template_str(rv, &self.config, &self.param);
+        let rv = Self::process_template_str(rv, &self.config, &self.param, &self.builtin_vars);
 
         let out_path = format!("{}", path.as_ref().display());
 
@@ -658,7 +690,12 @@ impl<'a> Reframe<'a> {
         Ok(())
     }
 
-    fn string_sub<'b, S>(input: S, config: &Config, param: &[Param]) -> String
+    fn string_sub<'b, S>(
+        input: S,
+        config: &Config,
+        param: &[Param],
+        builtin_vars: &[BuiltinVar],
+    ) -> String
     where
         S: Into<Cow<'b, str>>,
     {
@@ -672,6 +709,10 @@ impl<'a> Reframe<'a> {
             rep = rep.replace(&format!("${}$", k), vr);
         }
 
+        for v in builtin_vars.iter() {
+            rep = rep.replace(&format!("${}$", v.key), &(&v.replacer)(&rep));
+        }
+
         rep = rep.replace("$version$", &config.project.version);
         for p in param.iter() {
             if let Some(value) = p.value.as_ref() {
@@ -679,6 +720,7 @@ impl<'a> Reframe<'a> {
                 rep = rep.replace(&to_rep, value);
             }
         }
+
         rep
     }
 
@@ -698,6 +740,7 @@ impl<'a> Reframe<'a> {
                             format!("{}", pb.to_string_lossy()),
                             &self.config,
                             &self.param,
+                            &self.builtin_vars,
                         )
                     })
                     .collect::<Vec<String>>()
