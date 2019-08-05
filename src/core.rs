@@ -136,7 +136,7 @@ impl Param {
 
 pub(crate) struct BuiltinVar {
     pub key: &'static str,
-    pub replacer: Box<(Fn(&str) -> String)>,
+    pub replacer: Box<(dyn Fn(&str) -> String)>,
 }
 
 macro_rules! make_case_variant {

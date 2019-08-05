@@ -12,8 +12,12 @@ build-linux-musl:
 	@@docker run -it --rm -v $(PWD):/workdir \
 		-v /tmp:/root/.cargo/git \
 		-v /tmp:/root/.cargo/registry \
-		anvie/rust-musl-build:latest \
-		cargo build --release --target=x86_64-unknown-linux-musl
+		anvie/rust-musl-build:rust_nightly \
+		make _build-linux-musl
+
+_build-linux-musl:
+	cargo update
+	cargo build --release --target=x86_64-unknown-linux-musl
 
 fmt:
 	@@cargo fmt
