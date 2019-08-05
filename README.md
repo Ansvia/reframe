@@ -82,3 +82,13 @@ You can also use builtin variables:
 
 * `year` -> Print current year, eg: 2019.
 * `month_name` -> Print current month, eg: July
+
+
+"Ready for Work" sources
+-----------------------
+
+* [ansvia/mainframe.rf](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
+
+
+
+
