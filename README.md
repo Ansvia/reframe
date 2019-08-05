@@ -88,7 +88,7 @@ You can also use builtin variables:
 -----------------------
 
 * [ansvia/mainframe.rf](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
-
+* [anvie/basic_cli.rf](https://github.com/anvie/basic_cli.rf) - Create basic CLI application.
 
 
 
