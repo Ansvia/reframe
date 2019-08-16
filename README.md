@@ -76,7 +76,8 @@ Supported case variants:
 * `*_kebab_case` -> my-cool-app
 * `*_shout_snake_case` -> MY_COOL_APP
 * `*_upper_case` -> MY COOL APP
-* `*_camel_case` -> MyCoolApp
+* `*_camel_case` -> myCoolApp
+* `*_pascal_case` -> MyCoolApp
 
 You can also use builtin variables:
 

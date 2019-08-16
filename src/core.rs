@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use colored::*;
-use heck::{CamelCase, KebabCase, ShoutySnakeCase, SnakeCase};
+use heck::{CamelCase, KebabCase, ShoutySnakeCase, SnakeCase, MixedCase};
 use regex::Regex;
 use rustyline::Editor;
 use serde_json::Value as JsonValue;
@@ -284,7 +284,8 @@ impl<'a> Reframe<'a> {
                 ["upper_case", to_uppercase],
                 ["snake_case", to_snake_case],
                 ["kebab_case", to_kebab_case],
-                ["camel_case", to_camel_case],
+                ["camel_case", to_mixed_case], // eg: variableName
+                ["pascal_case", to_camel_case], // eg: ClassName
                 ["shout_snake_case", to_shouty_snake_case],
             ]
         );
@@ -402,13 +403,12 @@ impl<'a> Reframe<'a> {
                     p,
                     self.param,
                     [
-                        // @TODO(robin): remove this `lowercase` (backward compatibility code).
-                        ["lowercase", to_lowercase],
                         ["lower_case", to_lowercase],
                         ["upper_case", to_uppercase],
                         ["snake_case", to_snake_case],
                         ["kebab_case", to_kebab_case],
-                        ["camel_case", to_camel_case],
+                        ["camel_case", to_mixed_case],
+                        ["pascal_case", to_camel_case],
                         ["shout_snake_case", to_shouty_snake_case],
                     ]
                 );
@@ -816,6 +816,7 @@ mod tests {
         param.a_lower = "$param.a_lower_case$"\
         param.a_snake = "$param.a_snake_case$"\
         param.a_camel = "$param.a_camel_case$"\
+        param.a_pascal = "$param.a_pascal_case$"\
         param.a_shout_snake = "$param.a_shout_snake_case$"\
         "#;
 
@@ -827,7 +828,8 @@ mod tests {
         param.a = "Jumping Fox"\
         param.a_lower = "jumping fox"\
         param.a_snake = "jumping_fox"\
-        param.a_camel = "JumpingFox"\
+        param.a_camel = "jumpingFox"\
+        param.a_pascal = "JumpingFox"\
         param.a_shout_snake = "JUMPING_FOX"\
         "#;
 
@@ -847,7 +849,8 @@ mod tests {
                     h.insert("name_lower_case".to_string(), name.to_lowercase());
                     h.insert("name_upper_case".to_string(), name.to_uppercase());
                     h.insert("name_kebab_case".to_string(), name.to_kebab_case());
-                    h.insert("name_camel_case".to_string(), name.to_camel_case());
+                    h.insert("name_camel_case".to_string(), name.to_mixed_case());
+                    h.insert("name_pascal_case".to_string(), name.to_camel_case());
                     h.insert("name_snake_case".to_string(), name.to_snake_case());
                     h
                 },
@@ -871,7 +874,8 @@ mod tests {
                 ["lower_case", to_lowercase],
                 ["upper_case", to_uppercase],
                 ["snake_case", to_snake_case],
-                ["camel_case", to_camel_case],
+                ["camel_case", to_mixed_case],
+                ["pascal_case", to_camel_case],
                 ["shout_snake_case", to_shouty_snake_case]
             ]
         );
