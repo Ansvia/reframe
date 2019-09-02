@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use colored::*;
-use heck::{CamelCase, KebabCase, ShoutySnakeCase, SnakeCase, MixedCase};
+use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
 use regex::Regex;
 use rustyline::Editor;
 use serde_json::Value as JsonValue;
@@ -15,6 +15,7 @@ use std::{
     fs,
     io::{self, Write},
     path::{Path, PathBuf},
+    process::Command,
 };
 
 #[derive(Debug, Deserialize)]
@@ -24,6 +25,7 @@ pub struct Config {
     pub param: Vec<JsonValue>,
     #[serde(rename = "present", default = "Vec::new")]
     pub presents: Vec<Present>,
+    pub post_generate: Vec<PostGenerateOp>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,6 +33,11 @@ pub struct Present {
     pub path: String,
     #[serde(rename = "if")]
     pub ifcond: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PostGenerateOp {
+    pub make_executable: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -203,6 +210,8 @@ impl<'a> Reframe<'a> {
     ) -> io::Result<Self> {
         let mut config = read_config(path.as_ref().join("Reframe.toml"))?;
 
+        dbg!(&config);
+
         // check min version
         if util::compare_version(&config.reframe.min_version, env!("CARGO_PKG_VERSION")) < 0 {
             Err(io::Error::new(
@@ -284,7 +293,7 @@ impl<'a> Reframe<'a> {
                 ["upper_case", to_uppercase],
                 ["snake_case", to_snake_case],
                 ["kebab_case", to_kebab_case],
-                ["camel_case", to_mixed_case], // eg: variableName
+                ["camel_case", to_mixed_case],  // eg: variableName
                 ["pascal_case", to_camel_case], // eg: ClassName
                 ["shout_snake_case", to_shouty_snake_case],
             ]
@@ -456,6 +465,23 @@ impl<'a> Reframe<'a> {
         // hapus directory `load.reframe` kalo ada.
         debug!("remove load.reframe dir if any");
         let _ = fs::remove_dir_all(out_dir.join("load.reframe"));
+
+        debug!("Run post_generate procedure...");
+        for pg_op in self.config.post_generate.iter() {
+            if let Some(path) = pg_op.make_executable.as_ref() {
+                let path = Self::string_sub(path, &self.config, &self.param, &self.builtin_vars);
+                let path = out_dir.join(path);
+                dbg!(&path);
+                if Path::new(&path).is_file() {
+                    if cfg!(unix) {
+                        debug!("chmod'ing {}...", path.display());
+                        if let Err(e) = Command::new("chmod").arg("+x").arg(&path).output() {
+                            error!("Cannot chmod +x `{}`. {}", path.display(), e);
+                        }
+                    }
+                }
+            }
+        }
 
         debug!("done.");
 
