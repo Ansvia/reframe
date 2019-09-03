@@ -828,6 +828,7 @@ mod tests {
             },
             param: vec![],
             presents: vec![],
+            post_generate: vec![],
         }
     }
 
@@ -887,6 +888,7 @@ mod tests {
             },
             param: vec![],
             presents: vec![],
+            post_generate: vec![],
         };
 
         let p = Param::new("a".to_string(), "Jumping Fox".to_string());
