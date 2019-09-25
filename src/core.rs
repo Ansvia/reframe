@@ -210,7 +210,7 @@ impl<'a> Reframe<'a> {
     ) -> io::Result<Self> {
         let mut config = read_config(path.as_ref().join("Reframe.toml"))?;
 
-        dbg!(&config);
+        // dbg!(&config);
 
         // check min version
         if util::compare_version(&config.reframe.min_version, env!("CARGO_PKG_VERSION")) < 0 {
@@ -471,7 +471,7 @@ impl<'a> Reframe<'a> {
             if let Some(path) = pg_op.make_executable.as_ref() {
                 let path = Self::string_sub(path, &self.config, &self.param, &self.builtin_vars);
                 let path = out_dir.join(path);
-                dbg!(&path);
+                // dbg!(&path);
                 if Path::new(&path).is_file() {
                     if cfg!(unix) {
                         debug!("chmod'ing {}...", path.display());
