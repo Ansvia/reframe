@@ -89,7 +89,7 @@ You can also use builtin variables:
 -----------------------
 
 * [ansvia/mainframe.rf](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
-* [anvie/basic_cli.rf](https://github.com/anvie/basic_cli.rf) - Create basic CLI application.
-
+* [anvie/basic_cli.rf](https://github.com/anvie/basic_cli.rf) - Basic CLI application.
+* [anvie/rust-grpc.rf](https://github.com/anvie/rust-grpc.rf) - Rust gRPC application.
 
 
