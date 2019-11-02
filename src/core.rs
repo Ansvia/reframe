@@ -25,6 +25,7 @@ pub struct Config {
     pub param: Vec<JsonValue>,
     #[serde(rename = "present", default = "Vec::new")]
     pub presents: Vec<Present>,
+    #[serde(default = "Vec::new")]
     pub post_generate: Vec<PostGenerateOp>,
 }
 
