@@ -9,7 +9,7 @@ use std::{
 
 fn extract_zip<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
     let fin = File::open(&zip_path)
-        .unwrap_or_else(|_| panic!("Cannot open zip file `{}`", zip_path.as_ref().display()));
+        .unwrap_or_else(|e| panic!("Cannot open zip file `{}`. {}", zip_path.as_ref().display(), e));
     let mut archive = ZipArchive::new(fin)?;
     for i in 0..archive.len() {
         let mut file = archive
@@ -79,7 +79,7 @@ pub fn download<P: AsRef<Path>>(url: &str, out_dir: P, out_file_name: &str) -> i
                 )
             })?
             .copy_to(&mut w)
-            .unwrap_or_else(|_| panic!("cannot store data to `{}`", out_path.display()));
+            .unwrap_or_else(|e| panic!("cannot store data to `{}`. {}", out_path.display(), e));
     }
 
     // extract zip file

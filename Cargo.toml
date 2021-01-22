@@ -9,7 +9,10 @@ repository = "https://github.com/Ansvia/reframe"
 keywords = ["scaffolding", "scaffolder", "project", "generator"]
 readme = "README.md"
 license = "Apache-2.0"
-
+exclude = [
+ "img",
+ "*.orig", 
+]
 [dependencies]
 toml = { version = "0.4", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
