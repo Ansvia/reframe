@@ -91,5 +91,6 @@ You can also use builtin variables:
 * [ansvia/mainframe.rf](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
 * [anvie/basic_cli.rf](https://github.com/anvie/basic_cli.rf) - Basic CLI application.
 * [anvie/rust-grpc.rf](https://github.com/anvie/rust-grpc.rf) - Rust gRPC application.
+* [anvie/substrate-erc20.rf](https://github.com/anvie/substrate-erc20.rf) - ERC-20 Smart Contract.
 
 
