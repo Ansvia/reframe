@@ -58,7 +58,7 @@ Every string type param will have case variants automagically, eg: `author_name`
 
 So when you need to get project name with snake case, write: $name_snake_case$.
 
-When you done write the template you can test using `reframe [YOUR-WORKING-TEMPLATE-DIR]`,
+When you done, you can test using `reframe [YOUR-WORKING-TEMPLATE-DIR]`,
 if all is ok, push the project to your github repo with additional postfix `.rf` at the project name, eg: if your repo name is `unicorn` then you must push with name `unicorn.rf`, and finally you can use anywhere by simply typing:
 
     $ reframe [MY-GITHUB-USERNAME]/[MY-TEMPLATE]
