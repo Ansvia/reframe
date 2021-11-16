@@ -5,14 +5,14 @@ Reframe
 
 > Because *"don't repeat yourself"*
 
-If you need to build a project in matter of seconds, this tool for you.
+If you need to build project in matter of seconds, this tool for you.
 
 ![Reframe Demo](img/reframe.gif?raw=true)
 
 Install
 ----------
 
-Download binary file for your specific platform from [release page](https://github.com/Ansvia/reframe/releases).
+Download binary for your specific platform from [release page](https://github.com/Ansvia/reframe/releases).
 
 Or, if you are Rust and Cargo user, type:
 
@@ -33,7 +33,7 @@ Example
 Build Template
 ----------------
 
-To create Reframe template is super duper easy, all you needs is write file called `Reframe.toml` and place in root project dir, example:
+To create Reframe template is super duper easy, all you needs is write file called `Reframe.toml` and place at the root project dir, example:
 
 ```toml
 [project]
@@ -56,8 +56,10 @@ author_email = { ask = "Author email?" }
 
 Every string type param will have case variants automagically, eg: `author_name` will have: `author_name_lowercase`, `author_name_snake_case`, `author_name_kebab_case`.
 
-After finish writing project template you can test using `reframe [YOUR-WORKING-TEMPLATE-DIR]`,
-if all is ok, push to your github repo with additional postfix `.rf` at it repo name, eg: if your repo name is `unicorn` then you must push with name `unicorn.rf`, and finally you can use by simply typing:
+So when you need to get project name with snake case, write: $name_snake_case$.
+
+When you done write the template you can test using `reframe [YOUR-WORKING-TEMPLATE-DIR]`,
+if all is ok, push the project to your github repo with additional postfix `.rf` at the project name, eg: if your repo name is `unicorn` then you must push with name `unicorn.rf`, and finally you can use anywhere by simply typing:
 
     $ reframe [MY-GITHUB-USERNAME]/[MY-TEMPLATE]
 
