@@ -136,7 +136,7 @@ impl Param {
             value: Some(value),
             ifwith: None,
             options: vec![],
-            autogen: false,
+            // autogen: false,
             kind: ParamKind::String,
         }
     }
