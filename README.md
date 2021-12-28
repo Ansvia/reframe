@@ -9,6 +9,8 @@ If you need to build project in matter of seconds, this tool for you.
 
 ![Reframe Demo](img/reframe.gif?raw=true)
 
+For detail usage please check [Reframe Documentation](DOCS.md).
+
 Install
 ----------
 
@@ -67,7 +69,9 @@ Example:
 
     $ reframe agus/unicorn
 
-For more detail please see working examples:
+For detail usage please check [Reframe Documentation](DOCS.md).
+
+Reframe source examples:
 * [anvie/basic-rust.rf](https://github.com/anvie/basic-rust.rf).
 * [anvie/hello-world-py.rf](https://github.com/anvie/hello-world-py.rf)
 

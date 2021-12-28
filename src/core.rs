@@ -191,7 +191,7 @@ lazy_static! {
     static ref RE_IF: Regex = Regex::new(r"<% if .*? %>").unwrap();
     static ref ENDIF: &'static str = "<% endif %>";
     static ref RE_SYNTAX_MARK: Regex = Regex::new(r"(#|//|/\*|--)\s*<%(.*)%>").unwrap();
-    static ref RE_TEMPLATE_EXT: Regex = Regex::new(r"(.*)\.template(.\s*)?").unwrap();
+    static ref RE_TEMPLATE_EXT: Regex = Regex::new(r"^(.*)\.template(.\w*)?$").unwrap();
 }
 
 pub struct Reframe<'a> {
@@ -210,8 +210,6 @@ impl<'a> Reframe<'a> {
         dry_run: bool,
     ) -> io::Result<Self> {
         let mut config = read_config(path.as_ref().join("Reframe.toml"))?;
-
-        // dbg!(&config);
 
         // check min version
         if util::compare_version(&config.reframe.min_version, env!("CARGO_PKG_VERSION")) < 0 {
@@ -458,6 +456,9 @@ impl<'a> Reframe<'a> {
         debug!("processing dir: {}", &out_dir.display());
         self.process_dir(&out_dir)?;
 
+        debug!("normalizing dir: {}", &out_dir.display());
+        self.normalize_dirs(&out_dir)?;
+
         // remove Reframe.toml file
         debug!("remove Reframe.toml ...");
         let path = out_dir.join("Reframe.toml");
@@ -472,7 +473,6 @@ impl<'a> Reframe<'a> {
             if let Some(path) = pg_op.make_executable.as_ref() {
                 let path = Self::string_sub(path, &self.config, &self.param, &self.builtin_vars);
                 let path = out_dir.join(path);
-                // dbg!(&path);
                 if Path::new(&path).is_file() {
                     if cfg!(unix) {
                         debug!("chmod'ing {}...", path.display());
@@ -572,6 +572,7 @@ impl<'a> Reframe<'a> {
 
             if path.is_dir() {
                 debug!("visit: {}", &path.display());
+
                 let dst = dst.as_ref().join(tail_name);
                 fs::create_dir_all(&dst)?;
                 self.copy_dir(&path, &dst)?;
@@ -751,6 +752,23 @@ impl<'a> Reframe<'a> {
         rep
     }
 
+    fn normalize_dirs<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let dirent = fs::read_dir(&path)?;
+        for item in dirent {
+            let entry = item?;
+            let path = entry.path();
+            if path.is_dir() {
+                let path_str = format!("{}", path.display());
+                if RE_TEMPLATE_EXT.is_match(&path_str) {
+                    let new_path = RE_TEMPLATE_EXT.replace(&path_str, "$1$2").into_owned();
+                    debug!("renaming dir `{}` to `{}`", &path_str, &new_path);
+                    fs::rename(&path_str, &new_path)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn process_dir<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let dirent = fs::read_dir(&path)
             .unwrap_or_else(|_| panic!("cannot read dir `{}`", path.as_ref().display()));
@@ -796,6 +814,7 @@ impl<'a> Reframe<'a> {
                 // if template file like `README.template.md` then rename to `README.md`.
                 // overwrite existing.
                 let path_str = format!("{}", path.display());
+
                 if RE_TEMPLATE_EXT.is_match(&path_str) {
                     let new_path = RE_TEMPLATE_EXT.replace(&path_str, "$1$2").into_owned();
                     debug!("renaming `{}` to `{}`", &path_str, &new_path);

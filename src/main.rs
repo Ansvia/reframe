@@ -128,7 +128,9 @@ fn main() {
                 );
             }
         }
-        Err(e) => eprintln!("{}: {}", "ERROR".red(), e),
+        Err(e) => {
+            eprintln!("{}: {}", "ERROR".red(), e);
+        },
     }
     rl.save_history(&history_path).expect("cannot save history");
 }
