@@ -122,7 +122,7 @@ struct Param {
     pub ifwith: Option<String>,
     #[serde(default = "Vec::new")]
     pub options: Vec<String>,
-    pub autogen: bool,
+    // pub autogen: bool,
     pub kind: ParamKind,
 }
 
@@ -157,7 +157,7 @@ macro_rules! make_case_variant {
                 value: $p.value.as_ref().map(|a| a.$case_func().to_owned()),
                 ifwith: $p.ifwith.clone(),
                 options: vec![],
-                autogen: true,
+                // autogen: true,
                 kind: ParamKind::String,
             });
         )*
@@ -344,7 +344,7 @@ impl<'a> Reframe<'a> {
                         value: None,
                         ifwith: get_string_option(item, "if"),
                         options,
-                        autogen: false,
+                        // autogen: false,
                         kind,
                     };
 
