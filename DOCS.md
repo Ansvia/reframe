@@ -32,9 +32,9 @@ finish_text = """Usage:
 Install prerequisites:
     $ pip install -r requirements.txt
 Test:
-    $ brownie run scripts/test.py
+    $ python ./scripts/test.py
 Deploy:
-    $ brownie run scripts/deploy.py
+    $ python ./scripts/deploy.py
 """
 
 # all parameters bellow will be asked from user before the generation takes place.
@@ -43,7 +43,7 @@ Deploy:
 
 # example usage in source: $param.description$
 [[param]]
-description = { ask = "Description ?", default = "My ERC-721 Smart contract" }
+description = { ask = "Description ?", default = "My simple project" }
 
 [[param]]
 author_name = { ask = "Author name?", default="Author" }
@@ -55,13 +55,14 @@ author_email = { ask = "Author email?", default="author@example.com" }
 with_web_frontends = { ask = "With web frontends?", default = "false" }
 
 # `present` keyword ensures that directory or file is present according to the condition
-# from the parameter above, if `with_web_frontends` param is false then the `frontends/web` directory will be removed, otherwise it will be kept in place and subject to processing.
+# from the parameter above, if `with_web_frontends` param is false then the `frontends/web`
+# directory will be removed, otherwise it will be kept in place and subject to processing.
 [[present]]
 path = "frontends/web"
 if = "with_web_frontends"
 
 # `post_generate` keyword allows you to run a command after the generation is finished.
-# currently only supports `make_executable` command, to make the specific file executable.
+# currently only supports `make_executable` command which make the specific file executable.
 [[post_generate]]
 make_executable="./scripts/run.sh"
 ```
