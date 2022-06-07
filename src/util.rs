@@ -15,7 +15,7 @@ fn extract_zip<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
         let mut file = archive
             .by_index(i)
             .unwrap_or_else(|e| panic!("Cannot get zip entry index `{}`: {}", i, e));
-        let outpath = out_dir.as_ref().join(file.sanitized_name());
+        let outpath = out_dir.as_ref().join(file.mangled_name());
 
         {
             let comment = file.comment();

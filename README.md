@@ -35,7 +35,7 @@ Example
 Build Template
 ----------------
 
-To create Reframe template is super duper easy, all you needs is write file called `Reframe.toml` and place at the root project dir, example:
+To create Reframe template is super duper easy, all you needs is write config file `Reframe.toml` at the root project dir, example:
 
 ```toml
 [project]

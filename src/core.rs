@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use colored::*;
-use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
+use heck::{ToUpperCamelCase, ToKebabCase, ToLowerCamelCase, ToShoutySnakeCase, ToSnakeCase};
 use regex::Regex;
 use rustyline::Editor;
 use serde_json::Value as JsonValue;
@@ -292,8 +292,8 @@ impl<'a> Reframe<'a> {
                 ["upper_case", to_uppercase],
                 ["snake_case", to_snake_case],
                 ["kebab_case", to_kebab_case],
-                ["camel_case", to_mixed_case],  // eg: variableName
-                ["pascal_case", to_camel_case], // eg: ClassName
+                ["camel_case", to_lower_camel_case],  // eg: variableName
+                ["pascal_case", to_upper_camel_case], // eg: ClassName
                 ["shout_snake_case", to_shouty_snake_case],
             ]
         );
@@ -415,8 +415,8 @@ impl<'a> Reframe<'a> {
                         ["upper_case", to_uppercase],
                         ["snake_case", to_snake_case],
                         ["kebab_case", to_kebab_case],
-                        ["camel_case", to_mixed_case],
-                        ["pascal_case", to_camel_case],
+                        ["camel_case", to_lower_camel_case],
+                        ["pascal_case", to_upper_camel_case],
                         ["shout_snake_case", to_shouty_snake_case],
                     ]
                 );
@@ -896,8 +896,8 @@ mod tests {
                     h.insert("name_lower_case".to_string(), name.to_lowercase());
                     h.insert("name_upper_case".to_string(), name.to_uppercase());
                     h.insert("name_kebab_case".to_string(), name.to_kebab_case());
-                    h.insert("name_camel_case".to_string(), name.to_mixed_case());
-                    h.insert("name_pascal_case".to_string(), name.to_camel_case());
+                    h.insert("name_camel_case".to_string(), name.to_lower_camel_case());
+                    h.insert("name_pascal_case".to_string(), name.to_upper_camel_case());
                     h.insert("name_snake_case".to_string(), name.to_snake_case());
                     h
                 },
@@ -922,8 +922,8 @@ mod tests {
                 ["lower_case", to_lowercase],
                 ["upper_case", to_uppercase],
                 ["snake_case", to_snake_case],
-                ["camel_case", to_mixed_case],
-                ["pascal_case", to_camel_case],
+                ["camel_case", to_lower_camel_case],
+                ["pascal_case", to_upper_camel_case],
                 ["shout_snake_case", to_shouty_snake_case]
             ]
         );
