@@ -66,25 +66,35 @@ fn extract_zip<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
 }
 
 /// Download data from internet.
-pub fn download<P: AsRef<Path>>(url: &str, out_dir: P, out_file_name: &str) -> io::Result<()> {
+pub async fn download<P: AsRef<Path>>(
+    url: &str,
+    out_dir: P,
+    out_file_name: &str,
+) -> io::Result<()> {
     fs::create_dir_all(&out_dir)?;
 
     let out_path = out_dir.as_ref().join(out_file_name);
 
     {
-        let mut w = File::create(&out_path)?;
+        let mut fw = File::create(&out_path)?;
 
         debug!("downloading {} ...", url);
 
-        reqwest::get(url)
-            .map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("cannot clone from github: {} (error: {})", url, e),
-                )
-            })?
-            .copy_to(&mut w)
-            .unwrap_or_else(|e| panic!("cannot store data to `{}`. {}", out_path.display(), e));
+        let resp = reqwest::get(url).await.map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("cannot clone from github: {} (error: {})", url, e),
+            )
+        })?;
+
+        let mut content = std::io::Cursor::new(resp.bytes().await.map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                format!("cannot read data from github: {} (error: {})", url, e),
+            )
+        })?);
+
+        std::io::copy(&mut content, &mut fw)?;
     }
 
     // extract zip file

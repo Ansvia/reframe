@@ -59,8 +59,16 @@ fn extract_params(args: &[String]) -> Vec<Param> {
         .collect::<Vec<Param>>()
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::init();
+
+    let args: Vec<String> = env::args().collect();
+
+    if args.contains(&"--version".to_string()) {
+        println!(" Reframe {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
 
     println!();
     println!(" Reframe {}", env!("CARGO_PKG_VERSION"));
@@ -68,8 +76,6 @@ fn main() {
     println!(" by: Robin <r@ansvia.com>");
     println!(" ---------------------------");
     println!();
-
-    let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 || args[1] == "--help" {
         print_usage(&args);
@@ -94,7 +100,7 @@ fn main() {
             util::get_current_time_millis()
         );
         debug!("output: {}", env::temp_dir().display());
-        if let Err(e) = util::download(&url, &reframe_work_path, "master.zip") {
+        if let Err(e) = util::download(&url, &reframe_work_path, "master.zip").await {
             eprintln!(
                 "😭 {} {}, while pulling from repo for `{}`",
                 "FAILED:".red(),
