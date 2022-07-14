@@ -8,8 +8,13 @@ use std::{
 };
 
 fn extract_zip<P: AsRef<Path>>(zip_path: P, out_dir: P) -> io::Result<()> {
-    let fin = File::open(&zip_path)
-        .unwrap_or_else(|e| panic!("Cannot open zip file `{}`. {}", zip_path.as_ref().display(), e));
+    let fin = File::open(&zip_path).unwrap_or_else(|e| {
+        panic!(
+            "Cannot open zip file `{}`. {}",
+            zip_path.as_ref().display(),
+            e
+        )
+    });
     let mut archive = ZipArchive::new(fin)?;
     for i in 0..archive.len() {
         let mut file = archive

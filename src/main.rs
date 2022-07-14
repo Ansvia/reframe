@@ -26,7 +26,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::core::Reframe;
+use crate::core::{Param, Reframe};
 
 fn print_usage(args: &[String]) {
     let path = Path::new(&args[0]);
@@ -37,13 +37,26 @@ fn print_usage(args: &[String]) {
     println!();
     println!("OPTIONS:");
     println!();
-    println!("       --dry-run     For test source, don't touch current directory.");
+    println!("       --dry-run          Test only, don't touch disk.");
+    println!("       -P:[key]=[value]   Preset parameters.");
     println!();
     println!("Examples:");
     println!();
     println!("       $ {} anvie/basic-rust", exe_name);
     println!("       $ {} anvie/basic-rust --dry-run", exe_name);
     println!();
+}
+
+// extract user's arguments to params
+fn extract_params(args: &[String]) -> Vec<Param> {
+    args.iter()
+        .map(|a| a.trim())
+        .filter(|a| a.starts_with("-P"))
+        .map(|a| {
+            let s = a.split("=").collect::<Vec<&str>>();
+            Param::new(s[0].chars().skip(3).collect::<String>(), s[1])
+        })
+        .collect::<Vec<Param>>()
 }
 
 fn main() {
@@ -107,7 +120,9 @@ fn main() {
         debug!("no history");
     }
 
-    let mut rf = match Reframe::open(&source_path, &mut rl, dry_run) {
+    let params = extract_params(&args);
+
+    let mut rf = match Reframe::open(&source_path, &mut rl, dry_run, params) {
         Ok(rf) => rf,
         Err(e) => {
             eprintln!("{}", format!("{}", e).yellow());
@@ -130,7 +145,7 @@ fn main() {
         }
         Err(e) => {
             eprintln!("{}: {}", "ERROR".red(), e);
-        },
+        }
     }
     rl.save_history(&history_path).expect("cannot save history");
 }

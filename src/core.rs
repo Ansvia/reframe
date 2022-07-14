@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 use colored::*;
-use heck::{ToUpperCamelCase, ToKebabCase, ToLowerCamelCase, ToShoutySnakeCase, ToSnakeCase};
+use heck::{ToKebabCase, ToLowerCamelCase, ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
+use itertools::{Either, Itertools};
 use regex::Regex;
 use rustyline::Editor;
 use serde_json::Value as JsonValue;
@@ -106,14 +107,14 @@ impl<'a> SkipLine<'a> {
 }
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
-enum ParamKind {
+pub enum ParamKind {
     Bool,
     String,
     Options,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-struct Param {
+pub struct Param {
     pub ask: String,
     pub key: String,
     pub default: Option<String>,
@@ -127,13 +128,13 @@ struct Param {
 }
 
 impl Param {
-    #[cfg(test)]
-    pub fn new(key: String, value: String) -> Self {
+    // #[cfg(test)]
+    pub fn new<A: ToString, B: ToString>(key: A, value: B) -> Self {
         Param {
             ask: Default::default(),
-            key,
+            key: key.to_string(),
             default: Default::default(),
-            value: Some(value),
+            value: Some(value.to_string()),
             ifwith: None,
             options: vec![],
             // autogen: false,
@@ -196,7 +197,7 @@ lazy_static! {
 
 pub struct Reframe<'a> {
     pub config: Config,
-    param: Vec<Param>,
+    params: Vec<Param>,
     builtin_vars: Vec<BuiltinVar>,
     rl: &'a mut Editor<()>,
     path: PathBuf,
@@ -208,6 +209,7 @@ impl<'a> Reframe<'a> {
         path: P,
         rl: &'a mut Editor<()>,
         dry_run: bool,
+        params: Vec<Param>,
     ) -> io::Result<Self> {
         let mut config = read_config(path.as_ref().join("Reframe.toml"))?;
 
@@ -236,10 +238,9 @@ impl<'a> Reframe<'a> {
             replacer: Box::new(|_| Utc::now().format("%B").to_string()),
         });
 
-        let param = vec![];
         Ok(Self {
             config,
-            param,
+            params,
             builtin_vars,
             rl,
             path: path.as_ref().to_path_buf(),
@@ -256,12 +257,19 @@ impl<'a> Reframe<'a> {
         }
     }
 
-    fn param_value(param: &[Param], k: &str) -> String {
-        param
+    fn param_value_opt(params: &[Param], k: &str) -> Option<String> {
+        params
             .iter()
             .find(|a| a.key == k)
             .map(|a| a.value.as_ref().unwrap().to_owned())
-            .unwrap_or_else(|| "".to_string())
+    }
+
+    fn param_value(params: &[Param], k: &str) -> String {
+        Self::param_value_opt(params, k).unwrap_or_else(|| "".to_string())
+    }
+
+    fn get_value_from_param(&self, key: &str) -> Option<String> {
+        Self::param_value_opt(&self.params, key)
     }
 
     #[allow(clippy::option_map_unit_fn)]
@@ -271,14 +279,16 @@ impl<'a> Reframe<'a> {
         } else {
             out_dir.as_ref().to_path_buf()
         };
-        let project_name = self.input_read_string(
-            format!(
-                "  ➢ {} ({}) : ",
-                "Project name".bright_blue(),
-                &self.config.project.name.yellow()
-            ),
-            self.config.project.name.to_owned(),
-        );
+        let project_name = self.get_value_from_param("name").unwrap_or_else(|| {
+            self.input_read_string(
+                format!(
+                    "  ➢ {} ({}) : ",
+                    "Project name".bright_blue(),
+                    &self.config.project.name.yellow()
+                ),
+                self.config.project.name.to_owned(),
+            )
+        });
 
         if project_name != "" {
             self.config.project.name = project_name;
@@ -292,20 +302,21 @@ impl<'a> Reframe<'a> {
                 ["upper_case", to_uppercase],
                 ["snake_case", to_snake_case],
                 ["kebab_case", to_kebab_case],
-                ["camel_case", to_lower_camel_case],  // eg: variableName
+                ["camel_case", to_lower_camel_case], // eg: variableName
                 ["pascal_case", to_upper_camel_case], // eg: ClassName
                 ["shout_snake_case", to_shouty_snake_case],
             ]
         );
 
-        let version = self
-            .rl
-            .readline(&format!(
-                "  ➢ {} ({}) : ",
-                "Version".bright_blue(),
-                &self.config.project.version.yellow()
-            ))
-            .unwrap_or_else(|_| self.config.project.version.to_owned());
+        let version = self.get_value_from_param("version").unwrap_or_else(|| {
+            self.rl
+                .readline(&format!(
+                    "  ➢ {} ({}) : ",
+                    "Version".bright_blue(),
+                    &self.config.project.version.yellow()
+                ))
+                .unwrap_or_else(|_| self.config.project.version.to_owned())
+        });
 
         if version != "" {
             self.config.project.version = version;
@@ -344,22 +355,29 @@ impl<'a> Reframe<'a> {
                         value: None,
                         ifwith: get_string_option(item, "if"),
                         options,
-                        // autogen: false,
                         kind,
                     };
 
-                    self.param.push(p);
+                    self.params.push(p);
                 }
             }
         }
 
-        let mut new_param = self.param.clone();
+        let (pre_params, mut new_params): (Vec<Param>, Vec<Param>) =
+            self.params.iter().partition_map(|p| match p.ask.len() {
+                0 => Either::Left(p.clone()),
+                _ => Either::Right(p.clone()),
+            });
 
-        for p in new_param.iter_mut() {
+        for p in new_params.iter_mut() {
             if let Some(depends) = p.ifwith.as_ref() {
-                if Self::param_value(&self.param, depends) == "false" {
+                if Self::param_value(&self.params, depends) == "false" {
                     continue;
                 }
+            }
+
+            if pre_params.iter().find(|a| a.key == p.key).is_some() {
+                continue;
             }
 
             loop {
@@ -409,7 +427,7 @@ impl<'a> Reframe<'a> {
             if p.kind == ParamKind::String {
                 make_case_variant!(
                     p,
-                    self.param,
+                    self.params,
                     [
                         ["lower_case", to_lowercase],
                         ["upper_case", to_uppercase],
@@ -422,7 +440,7 @@ impl<'a> Reframe<'a> {
                 );
             }
 
-            self.param
+            self.params
                 .iter_mut()
                 .find(|a| a.key == p.key)
                 .map(|a| a.value = p.value.to_owned());
@@ -471,7 +489,7 @@ impl<'a> Reframe<'a> {
         debug!("Run post_generate procedure...");
         for pg_op in self.config.post_generate.iter() {
             if let Some(path) = pg_op.make_executable.as_ref() {
-                let path = Self::string_sub(path, &self.config, &self.param, &self.builtin_vars);
+                let path = Self::string_sub(path, &self.config, &self.params, &self.builtin_vars);
                 let path = out_dir.join(path);
                 if Path::new(&path).is_file() {
                     if cfg!(unix) {
@@ -497,7 +515,7 @@ impl<'a> Reframe<'a> {
             self.config.project.finish_text = Some(Self::string_sub(
                 text,
                 &self.config,
-                &self.param,
+                &self.params,
                 &self.builtin_vars,
             ));
         }
@@ -541,7 +559,7 @@ impl<'a> Reframe<'a> {
             for present in &self.config.presents {
                 if util::path_to_relative(&path, &self.path).as_path() == Path::new(&present.path) {
                     let mut no_match = 0;
-                    for param in &self.param {
+                    for param in &self.params {
                         if param.key == present.ifcond {
                             if param.kind == ParamKind::Bool {
                                 if let Some("false") = param.value.as_ref().map(|a| a.as_ref()) {
@@ -563,7 +581,7 @@ impl<'a> Reframe<'a> {
                             no_match += 1;
                         }
                     }
-                    if no_match == self.param.len() {
+                    if no_match == self.params.len() {
                         // param tidak terdefinisikan.
                         continue 'dirwalk;
                     }
@@ -701,7 +719,7 @@ impl<'a> Reframe<'a> {
         )
         .to_string();
 
-        let rv = Self::process_template_str(rv, &self.config, &self.param, &self.builtin_vars);
+        let rv = Self::process_template_str(rv, &self.config, &self.params, &self.builtin_vars);
 
         let out_path = format!("{}", path.as_ref().display());
 
@@ -784,7 +802,7 @@ impl<'a> Reframe<'a> {
                         Self::string_sub(
                             format!("{}", pb.to_string_lossy()),
                             &self.config,
-                            &self.param,
+                            &self.params,
                             &self.builtin_vars,
                         )
                     })
