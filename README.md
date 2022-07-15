@@ -104,7 +104,6 @@ You can also use builtin variables:
 * `year` -> Print current year, eg: 2019.
 * `month_name` -> Print current month, eg: July
 
-
 Available sources:
 -----------------------
 
@@ -112,3 +111,9 @@ Available sources:
 * [anvie/rust-grpc.rf](https://github.com/anvie/rust-grpc.rf) - Rust gRPC application.
 
 For more sources see [SOURCES](SOURCES.md).
+
+You can also list available sources by typing:
+
+```bash
+reframe --list
+```

@@ -1,7 +1,9 @@
 Documentation
 ==========
 
-All configuration written in file called `Reframe.toml` placed on the root project directory.
+Create file `Reframe.toml` at the root project dir, example:
+
+```toml
 
 Example configuration:
 
@@ -12,7 +14,7 @@ name = "Hello World"
 author = "anvie"
 
 # minimum Reframe version to be used
-min_version = "0.3.0"
+min_version = "0.4.0"
 
 [project]
 # Default name of the project.
