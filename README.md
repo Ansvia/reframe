@@ -5,7 +5,7 @@ Reframe
 
 > Because *"don't repeat yourself"*
 
-If you need to build project in matter of seconds, this tool for you.
+If you need build project in matter of seconds, this tool for you.
 
 ![Reframe Demo](img/reframe.gif?raw=true)
 
@@ -14,11 +14,25 @@ For detail usage please check [Reframe Documentation](DOCS.md).
 Install
 ----------
 
-Download binary for your specific platform from [release page](https://github.com/Ansvia/reframe/releases).
+### Homebrew
 
-Or, if you are Rust and Cargo user, type:
+For Mac with homebrew:
+
+```bash
+brew tap ansvia/tools
+brew install reframe
+```
+
+### Cargo
+
+Or, if you have Cargo, type:
 
     $ cargo install reframe
+
+### Download binary
+
+Download binary for your specific platform from [release page](https://github.com/Ansvia/reframe/releases).
+
 
 Usage
 --------
@@ -94,7 +108,6 @@ You can also use builtin variables:
 Available sources:
 -----------------------
 
-* [ansvia/mainframe.rf](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
 * [anvie/basic_cli.rf](https://github.com/anvie/basic_cli.rf) - Basic CLI application.
 * [anvie/rust-grpc.rf](https://github.com/anvie/rust-grpc.rf) - Rust gRPC application.
 
