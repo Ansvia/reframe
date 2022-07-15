@@ -37,6 +37,7 @@ fn print_usage(args: &[String]) {
     println!();
     println!("OPTIONS:");
     println!();
+    println!("       -L,--list          List available sources.");
     println!("       --dry-run          Test only, don't touch disk.");
     println!("       -P:[key]=[value]   Preset parameters.");
     println!();
@@ -73,12 +74,25 @@ async fn main() {
     println!();
     println!(" Reframe {}", env!("CARGO_PKG_VERSION"));
     println!(" project generator tool");
-    println!(" by: Robin <r@ansvia.com>");
+    println!(" by: Robin Syihab <r@ansvia.com>");
+    println!(" Twitter: @anvie");
     println!(" ---------------------------");
     println!();
 
     if args.len() < 2 || args[1] == "--help" {
         print_usage(&args);
+        return;
+    }
+
+    let list_sources = args.contains(&"-L".to_string()) || args.contains(&"--list".to_string());
+
+    if list_sources {
+        println!(" Available sources:");
+        println!();
+        for (name, description) in util::get_available_sources().await.unwrap() {
+            println!(" * {0: <30} - {1: <10}", name, description);
+        }
+        println!();
         return;
     }
 

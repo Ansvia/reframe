@@ -98,4 +98,4 @@ Available sources:
 * [anvie/basic_cli.rf](https://github.com/anvie/basic_cli.rf) - Basic CLI application.
 * [anvie/rust-grpc.rf](https://github.com/anvie/rust-grpc.rf) - Rust gRPC application.
 
-For more sources see [SOURCES.md](SOURCES.md).
+For more sources see [SOURCES](SOURCES.md).

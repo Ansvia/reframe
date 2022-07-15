@@ -1,3 +1,4 @@
+use regex::Regex;
 use zip::ZipArchive;
 
 use std::{
@@ -203,6 +204,48 @@ pub fn get_current_time_millis() -> u128 {
         .duration_since(UNIX_EPOCH)
         .expect("cannot get time duration since epoch");
     u128::from(since_epoch.as_secs()) * 1000 + u128::from(since_epoch.subsec_millis())
+}
+
+const SOURCES_URL: &'static str =
+    "https://raw.githubusercontent.com/Ansvia/reframe/master/SOURCES.md";
+lazy_static! {
+    static ref RE_REFRAME_URL: Regex =
+        Regex::new(r"\* \[(\w+/[\w-]*?)]\(https://github\.com/.*?.rf\) - (.*)").unwrap();
+}
+
+pub async fn get_available_sources() -> io::Result<Vec<(String, String)>> {
+    let resp = reqwest::get(SOURCES_URL).await.map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Cannot query sources: {} (error: {})", SOURCES_URL, e),
+        )
+    })?;
+
+    let text = resp.text().await.map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("Cannot read sources from: {} (error: {})", SOURCES_URL, e),
+        )
+    })?;
+
+    let texts = text
+        .split("\n")
+        .filter(|s| RE_REFRAME_URL.is_match(s))
+        .map(|s| match RE_REFRAME_URL.captures(s) {
+            Some(x) => Some((x.get(1), x.get(2))),
+            None => None,
+        })
+        .flatten()
+        .map(|(a, b)| {
+            (
+                a.map(|a| a.as_str()).unwrap_or(""),
+                b.map(|b| b.as_str()).unwrap_or(""),
+            )
+        })
+        .map(|(name, description)| (name.to_string(), description.to_string()))
+        .collect();
+
+    Ok(texts)
 }
 
 #[cfg(test)]
