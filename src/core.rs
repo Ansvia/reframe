@@ -185,7 +185,7 @@ macro_rules! make_case_variants_project {
 const EXCLUDED_EXTS: &[&str] = &[
     "png", "ico", "jpg", "jpeg", "avi", "gif", "mp4", "iso", "zip", "gz", "tar", "rar", "svg",
     "ttf", "woff", "woff2", "eot", "jar", "war", "mpg", "mpeg", "mp3", "m4v", "mkv", "docx",
-    "pptx", "pdf", "dmg", "wav", "webm", "m4a", "mov",
+    "pptx", "pdf", "dmg", "wav", "webm", "m4a", "mov", "pack"
 ];
 
 lazy_static! {
