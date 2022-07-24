@@ -40,6 +40,9 @@ fn print_usage(args: &[String]) {
     println!("       -L,--list          List available sources.");
     println!("       --dry-run          Test only, don't touch disk.");
     println!("       -P:[key]=[value]   Preset parameters.");
+    println!("       ");
+    println!("       --out              Custom output dir name (default: project name in kebab case).");
+    println!("       --quiet            Don't ask anything, just do it.");
     println!();
     println!("Examples:");
     println!();
@@ -161,7 +164,9 @@ async fn main() {
         })
         .collect::<Option<String>>();
 
-    match rf.generate(".", pre_out_name) {
+    let quiet = args.contains(&"--quiet".to_string());
+
+    match rf.generate(".", pre_out_name, quiet) {
         Ok(Some(out_name)) => {
             println!();
             println!("  ✨ project generated at `{}`", out_name);

@@ -277,6 +277,7 @@ impl<'a> Reframe<'a> {
         &mut self,
         out_dir: P,
         out_name: Option<O>,
+        quiet_mode: bool,
     ) -> io::Result<Option<String>> {
         let out_dir = if self.dry_run {
             Path::new("/tmp").join(out_dir.as_ref())
@@ -476,7 +477,7 @@ impl<'a> Reframe<'a> {
         );
 
         // check is path already exists, and warn if any
-        if out_dir.exists() {
+        if !quiet_mode && out_dir.exists() {
             println!(
                 "  ➢ {} `{}` already exists, overwrite it?",
                 "Warning".bright_yellow(),
