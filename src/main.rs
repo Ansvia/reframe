@@ -150,8 +150,19 @@ async fn main() {
         }
     };
 
-    match rf.generate(".") {
-        Ok(out_name) => {
+    // get custom pre-out-name if any
+    let pre_out_name = args
+        .iter()
+        .map(|a| a.trim())
+        .filter(|a| a.starts_with("--out"))
+        .map(|a| {
+            let s = a.split("=").collect::<Vec<&str>>();
+            Some(s[1])
+        })
+        .collect::<Option<String>>();
+
+    match rf.generate(".", pre_out_name) {
+        Ok(Some(out_name)) => {
             println!();
             println!("  ✨ project generated at `{}`", out_name);
             println!("{}", "     Ready to roll! 😎".green());
@@ -162,6 +173,9 @@ async fn main() {
                     text
                 );
             }
+        }
+        Ok(None) => {
+            println!("aborted.");
         }
         Err(e) => {
             eprintln!("{}: {}", "ERROR".red(), e);

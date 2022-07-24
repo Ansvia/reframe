@@ -185,7 +185,7 @@ macro_rules! make_case_variants_project {
 const EXCLUDED_EXTS: &[&str] = &[
     "png", "ico", "jpg", "jpeg", "avi", "gif", "mp4", "iso", "zip", "gz", "tar", "rar", "svg",
     "ttf", "woff", "woff2", "eot", "jar", "war", "mpg", "mpeg", "mp3", "m4v", "mkv", "docx",
-    "pptx", "pdf", "dmg", "wav", "webm", "m4a", "mov", "pack"
+    "pptx", "pdf", "dmg", "wav", "webm", "m4a", "mov", "pack",
 ];
 
 lazy_static! {
@@ -273,7 +273,11 @@ impl<'a> Reframe<'a> {
     }
 
     #[allow(clippy::option_map_unit_fn)]
-    pub fn generate<P: AsRef<Path>>(&mut self, out_dir: P) -> io::Result<String> {
+    pub fn generate<P: AsRef<Path>, O: AsRef<Path>>(
+        &mut self,
+        out_dir: P,
+        out_name: Option<O>,
+    ) -> io::Result<Option<String>> {
         let out_dir = if self.dry_run {
             Path::new("/tmp").join(out_dir.as_ref())
         } else {
@@ -446,15 +450,20 @@ impl<'a> Reframe<'a> {
                 .map(|a| a.value = p.value.to_owned());
         }
 
-        let out_dir = out_dir.join(
-            &self
-                .config
-                .project
-                .variants
-                .get("name_kebab_case")
-                .as_ref()
-                .unwrap(),
-        );
+        let out_dir = out_name
+            .as_ref()
+            .map(|a| out_dir.join(a))
+            .unwrap_or_else(|| {
+                out_dir.join(
+                    &self
+                        .config
+                        .project
+                        .variants
+                        .get("name_kebab_case")
+                        .as_ref()
+                        .unwrap(),
+                )
+            });
 
         // process finish_text
         debug!("processing finish text..");
@@ -465,6 +474,20 @@ impl<'a> Reframe<'a> {
             &self.path.display(),
             out_dir.display()
         );
+
+        // check is path already exists, and warn if any
+        if out_dir.exists() {
+            println!(
+                "  ➢ {} `{}` already exists, overwrite it?",
+                "Warning".bright_yellow(),
+                out_dir.display()
+            );
+            let mut rv = self.rl.readline("  ➢ [y/n] : ").map_err(map_err)?;
+            rv = rv.trim().to_string();
+            if rv != "y" {
+                return Ok(None);
+            }
+        }
 
         debug!("remove dir {}", &out_dir.display());
         let _ = fs::remove_dir_all(&out_dir);
@@ -504,7 +527,7 @@ impl<'a> Reframe<'a> {
 
         debug!("done.");
 
-        Ok(format!("{}", out_dir.display()))
+        Ok(Some(format!("{}", out_dir.display())))
     }
 
     /// Memproses parameter internal,
