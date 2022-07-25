@@ -41,7 +41,9 @@ fn print_usage(args: &[String]) {
     println!("       --dry-run          Test only, don't touch disk.");
     println!("       -P:[key]=[value]   Preset parameters.");
     println!("       ");
-    println!("       --out              Custom output dir name (default: project name in kebab case).");
+    println!(
+        "       --out              Custom output dir name (default: project name in kebab case)."
+    );
     println!("       --quiet            Don't ask anything, just do it.");
     println!();
     println!("Examples:");
@@ -154,15 +156,17 @@ async fn main() {
     };
 
     // get custom pre-out-name if any
-    let pre_out_name = args
+    let pre_out_name: Option<String> = args
         .iter()
         .map(|a| a.trim())
         .filter(|a| a.starts_with("--out"))
         .map(|a| {
             let s = a.split("=").collect::<Vec<&str>>();
-            Some(s[1])
+            Some(s[1].to_string())
         })
-        .collect::<Option<String>>();
+        .collect::<Vec<Option<String>>>()
+        .pop()
+        .unwrap_or(None);
 
     let quiet = args.contains(&"--quiet".to_string());
 

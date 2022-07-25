@@ -56,6 +56,10 @@ author_email = { ask = "Author email?", default="author@example.com" }
 [[param]]
 with_web_frontends = { ask = "With web frontends?", default = "false" }
 
+# conditional param if `with_web_frontends` is true.
+[[param]]
+with_typescript = { ask = "Use typescript?", default = "false", if="with_web_frontends" }
+
 # `present` keyword ensures that directory or file is present according to the condition
 # from the parameter above, if `with_web_frontends` param is false then the `frontends/web`
 # directory will be removed, otherwise it will be kept in place and subject to processing.
