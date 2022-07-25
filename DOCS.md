@@ -4,10 +4,6 @@ Documentation
 Create file `Reframe.toml` at the root project dir, example:
 
 ```toml
-
-Example configuration:
-
-```toml
 [reframe]
 # Name of this template
 name = "Hello World"
