@@ -401,7 +401,11 @@ impl<'a> Reframe<'a> {
                     format!("  ➢ {} : ", p.ask.bright_blue())
                 };
 
-                let mut rv = self.rl.readline(&question).map_err(map_err)?;
+                let mut rv = if !quiet_mode {
+                    self.rl.readline(&question).map_err(map_err)?
+                }else{
+                    p.default.clone().unwrap_or("".to_string())
+                };
 
                 rv = rv.trim().to_string();
 
