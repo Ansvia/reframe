@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use log::{debug, error, trace};
 use regex::Regex;
 use rustyline::Editor;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use serde_json::Value as JsonValue;
 
 use crate::util;
@@ -755,9 +755,9 @@ impl<'a> Reframe<'a> {
     pub fn process_with_handlebars(
         file_name: &str,
         text: String,
-        config: &Config,
+        _config: &Config,
         params: &[Param],
-        builtin_vars: &[BuiltinVar],
+        _builtin_vars: &[BuiltinVar],
     ) -> io::Result<String> {
         let mut handlebars = Handlebars::new();
 

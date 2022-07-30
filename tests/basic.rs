@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+
 
 // #[macro_use]
-use reframe::core::{make_case_variant, *};
+use reframe::core::{*};
 
-use heck::*;
+
 
 fn build_config(name: &str) -> Config {
     Config {

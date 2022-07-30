@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use lazy_static::lazy_static;
 use log::debug;
 use regex::Regex;
