@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use log::{debug, error, trace};
 use regex::Regex;
 use rustyline::Editor;
-use serde::{Deserialize};
+use serde::Deserialize;
 use serde_json::Value as JsonValue;
 
 use crate::util;
@@ -268,7 +268,8 @@ impl<'a> Reframe<'a> {
         params
             .iter()
             .find(|a| a.key == k)
-            .map(|a| a.value.as_ref().unwrap().to_owned())
+            .and_then(|a| a.value.as_ref())
+            .map(|a| a.to_owned())
     }
 
     fn param_value(params: &[Param], k: &str) -> String {
@@ -381,6 +382,8 @@ impl<'a> Reframe<'a> {
                 _ => Either::Right(p.clone()),
             });
 
+        let mut final_params = pre_params.clone();
+
         for p in new_params.iter_mut() {
             if let Some(depends) = p.ifwith.as_ref() {
                 if Self::param_value(&self.params, depends) == "false" {
@@ -435,6 +438,7 @@ impl<'a> Reframe<'a> {
                 self.rl.add_history_entry(rv.clone());
 
                 p.value = Some(rv);
+                final_params.push(p.clone());
 
                 break;
             }
@@ -456,11 +460,13 @@ impl<'a> Reframe<'a> {
                 );
             }
 
-            self.params
+            final_params
                 .iter_mut()
                 .find(|a| a.key == p.key)
                 .map(|a| a.value = p.value.to_owned());
         }
+
+        self.params = final_params;
 
         let out_dir = out_name
             .as_ref()
@@ -643,7 +649,7 @@ impl<'a> Reframe<'a> {
     pub fn process_template_str(
         text: String,
         config: &Config,
-        param: &[Param],
+        params: &[Param],
         builtin_vars: &[BuiltinVar],
     ) -> String {
         let lines: Vec<&str> = text.split('\n').collect();
@@ -674,7 +680,7 @@ impl<'a> Reframe<'a> {
                 last_if_cond = line;
                 last_if_cond_line = i;
                 let mut if_handled = false;
-                for p in param.iter() {
+                for p in params.iter() {
                     let k = &p.key;
                     let v = match p.value.as_ref() {
                         Some(v) => v,
@@ -734,7 +740,7 @@ impl<'a> Reframe<'a> {
             new_lines2.push(Self::string_sub(
                 line.to_owned(),
                 config,
-                param,
+                params,
                 builtin_vars,
             ));
         }

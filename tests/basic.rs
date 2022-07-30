@@ -1,9 +1,5 @@
-
-
 // #[macro_use]
-use reframe::core::{*};
-
-
+use reframe::core::*;
 
 fn build_config(name: &str) -> Config {
     Config {
