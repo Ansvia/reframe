@@ -5,7 +5,7 @@
 * [anvie/basic-rust](https://github.com/anvie/basic-rust.rf) - Basic rust project.
 * [anvie/rust-grpc](https://github.com/anvie/rust-grpc.rf) - Rust application with gRPC support.
 * [anvie/rust-graphql-server](https://github.com/anvie/rust-graphql-server.rf) - GraphQL server written in Rust.
-* [anvie/basic_cli](https://github.com/anvie/basic_cli.rf) - Basic Rust CLI application.
+* [anvie/basic-rust-cli](https://github.com/anvie/basic-rust-cli.rf) - Basic Rust CLI application.
 * [anvie/nemo3](https://github.com/anvie/nemo3.rf) - Next.js + Web3 + MongoDB webstack reframe source.
 * [Ansvia/mainframe](https://github.com/ansvia/mainframe.rf) - The most advanced full-stack framework.
 * [anvie/substrate-pallet](https://github.com/anvie/substrate-pallet.rf) - Substrate pallet scaffolder.
