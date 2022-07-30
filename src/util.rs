@@ -1,7 +1,7 @@
+use lazy_static::lazy_static;
+use log::debug;
 use regex::Regex;
 use zip::ZipArchive;
-use log::debug;
-use lazy_static::lazy_static;
 
 use std::{
     fs::{self, File},

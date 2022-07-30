@@ -1,8 +1,7 @@
-
 use std::collections::HashMap;
 
 // #[macro_use]
-use reframe::core::{*, make_case_variant};
+use reframe::core::{make_case_variant, *};
 
 use heck::*;
 

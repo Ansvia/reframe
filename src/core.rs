@@ -1,20 +1,20 @@
 use chrono::prelude::*;
 use colored::*;
+use handlebars::Handlebars;
 use heck::{ToKebabCase, ToLowerCamelCase, ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 use itertools::{Either, Itertools};
 use lazy_static::lazy_static;
 use log::{debug, error, trace};
 use regex::Regex;
 use rustyline::Editor;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use handlebars::Handlebars;
 
 use crate::util;
 
 use std::{
     borrow::Cow,
-    collections::{HashMap, BTreeMap},
+    collections::{BTreeMap, HashMap},
     convert::From,
     fmt::Display,
     fs,
@@ -761,19 +761,19 @@ impl<'a> Reframe<'a> {
     ) -> io::Result<String> {
         let mut handlebars = Handlebars::new();
 
-        handlebars.register_template_string(file_name, text).map_err(map_err)?;
+        handlebars
+            .register_template_string(file_name, text)
+            .map_err(map_err)?;
 
         // convert param to handlebars data
         let mut data = BTreeMap::new();
 
         for param in params {
-            let key = param.key.clone();
-            let value = param.value.clone();
-            if let Some(value) = value {
-                data.insert(key, Self::to_json_value(&value));
+            if let Some(value) = &param.value {
+                data.insert(&param.key, Self::to_json_value(value));
             } else {
                 if let Some(dflt) = &param.default {
-                    data.insert(key, Self::to_json_value(dflt));
+                    data.insert(&param.key, Self::to_json_value(dflt));
                 }
             }
         }
@@ -799,7 +799,13 @@ impl<'a> Reframe<'a> {
 
         let out_path = format!("{}", path.as_ref().display());
 
-        let rv = Self::process_with_handlebars(&out_path, rv, &self.config, &self.params, &self.builtin_vars)?;
+        let rv = Self::process_with_handlebars(
+            &out_path,
+            rv,
+            &self.config,
+            &self.params,
+            &self.builtin_vars,
+        )?;
 
         let _ = fs::remove_file(&out_path);
 

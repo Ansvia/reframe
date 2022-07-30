@@ -1,4 +1,3 @@
-
 use heck::*;
 
 use crate::core::*;
@@ -49,11 +48,25 @@ bool capped = true;
     let mut param = vec![];
     // param.push(p);
 
-    let output = Reframe::process_with_handlebars("ConditionalTest",input.to_string(), &config, &param, &[]).unwrap();
+    let output = Reframe::process_with_handlebars(
+        "ConditionalTest",
+        input.to_string(),
+        &config,
+        &param,
+        &[],
+    )
+    .unwrap();
     assert_eq!(output, expected1);
 
     param.push(Param::new("with_capped".to_string(), "true".to_owned()));
-    let output = Reframe::process_with_handlebars("ConditionalTest",input.to_string(), &config, &param, &[]).unwrap();
+    let output = Reframe::process_with_handlebars(
+        "ConditionalTest",
+        input.to_string(),
+        &config,
+        &param,
+        &[],
+    )
+    .unwrap();
     assert_eq!(output, expected2);
 
     param.clear();
@@ -105,19 +118,47 @@ function doSomething(){
 
     let mut param = vec![];
 
-    let output = Reframe::process_with_handlebars("ConditionalTest",input.to_string(), &config, &param, &[]).unwrap();
+    let output = Reframe::process_with_handlebars(
+        "ConditionalTest",
+        input.to_string(),
+        &config,
+        &param,
+        &[],
+    )
+    .unwrap();
     assert_eq!(output, expected1);
 
     param.push(Param::new("with_capped".to_string(), "true".to_owned()));
-    let output = Reframe::process_with_handlebars("ConditionalTest",input.to_string(), &config, &param, &[]).unwrap();
+    let output = Reframe::process_with_handlebars(
+        "ConditionalTest",
+        input.to_string(),
+        &config,
+        &param,
+        &[],
+    )
+    .unwrap();
     assert_eq!(output, expected2);
 
     param.push(Param::new("with_something".to_string(), "true".to_owned()));
-    let output = Reframe::process_with_handlebars("ConditionalTest", input.to_string(), &config, &param, &[]).unwrap();
+    let output = Reframe::process_with_handlebars(
+        "ConditionalTest",
+        input.to_string(),
+        &config,
+        &param,
+        &[],
+    )
+    .unwrap();
     assert_eq!(output, expected3);
 
     param.clear();
     param.push(Param::new("with_something".to_string(), "true".to_owned()));
-    let output = Reframe::process_with_handlebars("ConditionalTest", input.to_string(), &config, &param, &[]).unwrap();
+    let output = Reframe::process_with_handlebars(
+        "ConditionalTest",
+        input.to_string(),
+        &config,
+        &param,
+        &[],
+    )
+    .unwrap();
     assert_eq!(output, expected4);
 }

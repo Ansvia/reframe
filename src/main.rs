@@ -1,17 +1,17 @@
 extern crate toml;
 
-extern crate serde;
 extern crate rustyline;
+extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate log;
+extern crate chrono;
 extern crate colored;
 extern crate env_logger;
 extern crate heck;
 extern crate regex;
 extern crate reqwest;
 extern crate zip;
-extern crate chrono;
 
 mod core;
 mod util;
@@ -135,9 +135,8 @@ async fn main() {
         PathBuf::from(&source)
     };
 
-    let mut rl = Editor::<()>::new().unwrap_or_else(|_| {
-        panic!("Unable to create editor: {}", "Rustyline".red())
-    });
+    let mut rl = Editor::<()>::new()
+        .unwrap_or_else(|_| panic!("Unable to create editor: {}", "Rustyline".red()));
 
     let history_path = env::temp_dir().join(".reframe~");
 
