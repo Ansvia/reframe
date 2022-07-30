@@ -6,14 +6,15 @@ use lazy_static::lazy_static;
 use log::{debug, error, trace};
 use regex::Regex;
 use rustyline::Editor;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use serde_json::Value as JsonValue;
+use handlebars::Handlebars;
 
 use crate::util;
 
 use std::{
     borrow::Cow,
-    collections::HashMap,
+    collections::{HashMap, BTreeMap},
     convert::From,
     fmt::Display,
     fs,
@@ -224,7 +225,7 @@ impl<'a> Reframe<'a> {
             Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!(
-                    "Source require min Reframe version {}, please upgrade your Reframe.",
+                    "Reframe version min {} is required to use this source, please upgrade your Reframe.",
                     config.reframe.min_version
                 ),
             ))?;
@@ -741,6 +742,47 @@ impl<'a> Reframe<'a> {
         new_lines2.join("\n")
     }
 
+    fn to_json_value(value: &str) -> serde_json::Value {
+        if value == "true" {
+            serde_json::Value::Bool(true)
+        } else if value == "false" {
+            serde_json::Value::Bool(false)
+        } else {
+            serde_json::Value::String(value.to_owned())
+        }
+    }
+
+    pub fn process_with_handlebars(
+        file_name: &str,
+        text: String,
+        config: &Config,
+        params: &[Param],
+        builtin_vars: &[BuiltinVar],
+    ) -> io::Result<String> {
+        let mut handlebars = Handlebars::new();
+
+        handlebars.register_template_string(file_name, text).map_err(map_err)?;
+
+        // convert param to handlebars data
+        let mut data = BTreeMap::new();
+
+        for param in params {
+            let key = param.key.clone();
+            let value = param.value.clone();
+            if let Some(value) = value {
+                data.insert(key, Self::to_json_value(&value));
+            } else {
+                if let Some(dflt) = &param.default {
+                    data.insert(key, Self::to_json_value(dflt));
+                }
+            }
+        }
+
+        let rv = handlebars.render(file_name, &data).map_err(map_err)?;
+
+        Ok(rv)
+    }
+
     fn process_template<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         debug!("processing template: {}", path.as_ref().display());
         print!(".");
@@ -756,6 +798,8 @@ impl<'a> Reframe<'a> {
         let rv = Self::process_template_str(rv, &self.config, &self.params, &self.builtin_vars);
 
         let out_path = format!("{}", path.as_ref().display());
+
+        let rv = Self::process_with_handlebars(&out_path, rv, &self.config, &self.params, &self.builtin_vars)?;
 
         let _ = fs::remove_file(&out_path);
 

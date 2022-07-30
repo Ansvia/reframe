@@ -1,5 +1,5 @@
 extern crate toml;
-#[macro_use]
+
 extern crate serde;
 extern crate rustyline;
 extern crate serde_json;
@@ -11,8 +11,6 @@ extern crate heck;
 extern crate regex;
 extern crate reqwest;
 extern crate zip;
-#[macro_use]
-extern crate lazy_static;
 extern crate chrono;
 
 mod core;
