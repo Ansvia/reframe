@@ -1,8 +1,8 @@
 [package]
 name = "reframe"
-version = "0.4.7"
+version = "0.4.8"
 authors = ["robin <r@ansvia.com>"]
-edition = "2018"
+edition = "2021"
 description = "Light, Fast & Simple project scaffolder"
 homepage = "https://github.com/Ansvia/reframe"
 repository = "https://github.com/Ansvia/reframe"
