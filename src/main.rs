@@ -137,7 +137,9 @@ async fn main() {
         PathBuf::from(&source)
     };
 
-    let mut rl = Editor::<()>::new();
+    let mut rl = Editor::<()>::new().unwrap_or_else(|_| {
+        panic!("Unable to create editor: {}", "Rustyline".red())
+    });
 
     let history_path = env::temp_dir().join(".reframe~");
 
