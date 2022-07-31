@@ -46,10 +46,10 @@ Example
 
 `anvie/basic-rust` is refering to my github repo: [basic-rust.rf](https://github.com/anvie/basic-rust.rf).
 
-Build Template
+Build Source
 ----------------
 
-To create Reframe template is super duper easy, all you needs is write config file `Reframe.toml` at the root project dir, example:
+To create Reframe source is super duper easy, all you needs is write `Reframe.toml` at the root project dir, example:
 
 ```toml
 [project]
@@ -103,6 +103,18 @@ You can also use builtin variables:
 
 * `year` -> Print current year, eg: 2019.
 * `month_name` -> Print current month, eg: July
+
+
+Templating
+------------
+
+Reframe also support templating engine for manipulating code use Handlebars syntax, example:
+
+```javascript
+{{#if with_jwt}}
+const jwt = require('jsonwebtoken');
+{{/if}}
+```
 
 Available sources:
 -----------------------
