@@ -21,13 +21,18 @@ _build-linux-musl:
 	cargo build --release --target=x86_64-unknown-linux-musl
 
 dist:
+	make dist-osx
+	make dist-linux
+
+dist-osx:
 	@@echo Build OSX distribution...
 	make release
 	cd target/release && rm -f reframe_v$(VERSION)-x86_64-darwin.zip && zip -r reframe_v$(VERSION)-x86_64-darwin.zip reframe
+
+dist-linux:
 	@@echo Build Linux distribution...
 	make build-linux-musl
 	cd target/x86_64-unknown-linux-musl/release && rm -f reframe_v$(VERSION)-x86_64-linux.zip && zip -r reframe_v$(VERSION)-x86_64-linux.zip reframe
-
 
 fmt:
 	@@cargo fmt
