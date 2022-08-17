@@ -20,6 +20,9 @@ _build-linux-musl:
 	cargo update
 	cargo build --release --target=x86_64-unknown-linux-musl
 
+build-linux-static:
+	RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target x86_64-unknown-linux-musl
+
 dist:
 	make dist-osx
 	make dist-linux
