@@ -447,7 +447,7 @@ impl<'a> Reframe<'a> {
             if p.kind == ParamKind::String {
                 make_case_variant!(
                     p,
-                    self.params,
+                    final_params,
                     [
                         ["lower_case", to_lowercase],
                         ["upper_case", to_uppercase],
