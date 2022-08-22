@@ -1,6 +1,6 @@
 [package]
 name = "reframe"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["robin <r@ansvia.com>"]
 edition = "2021"
 description = "Light, Fast & Simple project scaffolder"
