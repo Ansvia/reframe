@@ -15,6 +15,6 @@
 * [anvie/erc1155](https://github.com/anvie/erc1155.rf) - ERC-1155 standard smart contract project.
 * [anvie/substrate-erc20](https://github.com/anvie/substrate-erc20.rf) - Substrate ERC-20 like Smart Contract (Ink!).
 * [anvie/simple-nft-site](https://github.com/anvie/simple-nft-site.rf) - Simple NFT site build with Next.js + Tailwind.
-
+* [anvie/web-profile](https://github.com/anvie/web-profile.rf) - Simple static web profile.
 
 **NOTES**: PR are welcome to add your sources here.
