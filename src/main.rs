@@ -38,6 +38,7 @@ fn print_usage(args: &[String]) {
     println!("       -L,--list          List available sources.");
     println!("       --dry-run          Test only, don't touch disk.");
     println!("       -P:[key]=[value]   Preset parameters.");
+    println!("       -b,--branch        Select branch to use. Default: master");
     println!("       ");
     println!(
         "       --out              Custom output dir name (default: project name in kebab case)."
@@ -106,18 +107,25 @@ async fn main() {
     }
 
     let source = &args[1];
+    let branch = get_param_value(&args, "--branch", "-b").unwrap_or_else(|| "master".to_string());
+
     let reframe_work_path = env::temp_dir().join("reframe_work");
     let source_path = if !Path::new(&source).exists() {
         debug!("source not found in local: {}", source);
         debug!("trying get from github.com/{} ...", source);
-        println!(" downloading from repo...");
+        if branch != "master" {
+            println!(" Downloading from repo `{}` branch `{}`...", source, branch);
+        }else{
+            println!(" Downloading from repo `{}`...", source);
+        }
         let url = format!(
-            "https://github.com/{}.rf/archive/master.zip?nocache={}",
+            "https://github.com/{}.rf/archive/{}.zip?nocache={}",
             source,
+            branch,
             util::get_current_time_millis()
         );
         debug!("output: {}", env::temp_dir().display());
-        if let Err(e) = util::download(&url, &reframe_work_path, "master.zip").await {
+        if let Err(e) = util::download(&url, &reframe_work_path, &format!("{}.zip", branch)).await {
             eprintln!(
                 "😭 {} {}, while pulling from repo for `{}`",
                 "FAILED:".red(),
@@ -155,17 +163,7 @@ async fn main() {
     };
 
     // get custom pre-out-name if any
-    let pre_out_name: Option<String> = args
-        .iter()
-        .map(|a| a.trim())
-        .filter(|a| a.starts_with("--out"))
-        .map(|a| {
-            let s = a.split("=").collect::<Vec<&str>>();
-            Some(s[1].to_string())
-        })
-        .collect::<Vec<Option<String>>>()
-        .pop()
-        .unwrap_or(None);
+    let pre_out_name: Option<String> = get_param_value(&args, "--out", "");
 
     let quiet = args.contains(&"--quiet".to_string());
 
@@ -190,4 +188,24 @@ async fn main() {
         }
     }
     rl.save_history(&history_path).expect("cannot save history");
+}
+
+fn get_param_value(args: &Vec<String>, name: &str, short_name: &str ) -> Option<String> {
+    args
+        .iter()
+        .map(|a| a.trim())
+        .filter(|a| {
+            a.starts_with(name) || (short_name != "" && a.starts_with(short_name))
+        })
+        .map(|a| {
+            let s = a.split("=").collect::<Vec<&str>>();
+            if s.len() == 2 {
+                Some(s[1].to_string())
+            }else{
+                None
+            }
+        })
+        .collect::<Vec<Option<String>>>()
+        .pop()
+        .unwrap_or(None)
 }
