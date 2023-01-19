@@ -135,10 +135,20 @@ async fn main() {
             eprintln!();
             return;
         }
-        reframe_work_path.join(format!(
+        let _path = reframe_work_path.join(format!(
             "{}.rf-master",
             source.split('/').skip(1).collect::<String>()
-        ))
+        ));
+
+        if _path.exists() {
+            _path
+        }else{
+            // change -master with -main as the default branch
+            reframe_work_path.join(format!(
+                "{}.rf-main",
+                source.split('/').skip(1).collect::<String>()
+            ))
+        }
     } else {
         PathBuf::from(&source)
     };
@@ -157,7 +167,7 @@ async fn main() {
     let mut rf = match Reframe::open(&source_path, &mut rl, dry_run, params) {
         Ok(rf) => rf,
         Err(e) => {
-            eprintln!("{}", format!("{}", e).yellow());
+            eprintln!("Cannot open reframe source in tmp dir. {}", format!("{}", e).red());
             std::process::exit(2);
         }
     };
