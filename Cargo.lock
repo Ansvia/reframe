@@ -1020,7 +1020,7 @@ dependencies = [
 
 [[package]]
 name = "reframe"
-version = "0.5.2"
+version = "0.5.4"
 dependencies = [
  "chrono",
  "colored",

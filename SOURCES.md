@@ -18,4 +18,4 @@
 * [anvie/web-profile](https://github.com/anvie/web-profile.rf) - Simple static web profile.
 * [anvie/t3app.rf](https://github.com/anvie/t3app.rf) - T3 app based app with additional utilities and tailwind linter configuration.
 
-**NOTES**: PR are welcome to add your sources here.
+**NOTES**: PRs are welcome to add your sources here.

@@ -214,11 +214,14 @@ const SOURCES_URL: &'static str =
     "https://raw.githubusercontent.com/Ansvia/reframe/master/SOURCES.md";
 lazy_static! {
     static ref RE_REFRAME_URL: Regex =
-        Regex::new(r"\* \[(\w+/[\w-]*?)]\(https://github\.com/.*?.rf\) - (.*)").unwrap();
+        Regex::new(r"\* \[(\w+/[a-zA-Z0-9-.]*?)]\(https://github\.com/.*?.rf\) - (.*)").unwrap();
 }
 
 pub async fn get_available_sources() -> io::Result<Vec<(String, String)>> {
-    let resp = reqwest::get(SOURCES_URL).await.map_err(|e| {
+    let a = get_current_time_millis();
+    let url = format!("{}?a={}", SOURCES_URL, a);
+    log::debug!("querying sources from: {}", url);
+    let resp = reqwest::get(url).await.map_err(|e| {
         io::Error::new(
             io::ErrorKind::NotFound,
             format!("Cannot query sources: {} (error: {})", SOURCES_URL, e),
@@ -231,6 +234,8 @@ pub async fn get_available_sources() -> io::Result<Vec<(String, String)>> {
             format!("Cannot read sources from: {} (error: {})", SOURCES_URL, e),
         )
     })?;
+
+    log::debug!("sources: {}", text);
 
     let texts = text
         .split("\n")
