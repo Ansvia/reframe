@@ -16,5 +16,6 @@
 * [anvie/substrate-erc20](https://github.com/anvie/substrate-erc20.rf) - Substrate ERC-20 like Smart Contract (Ink!).
 * [anvie/simple-nft-site](https://github.com/anvie/simple-nft-site.rf) - Simple NFT site build with Next.js + Tailwind.
 * [anvie/web-profile](https://github.com/anvie/web-profile.rf) - Simple static web profile.
+* [anvie/t3app.rf](https://github.com/anvie/t3app.rf) - T3 app based app with additional utilities and tailwind linter configuration.
 
 **NOTES**: PR are welcome to add your sources here.
