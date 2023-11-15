@@ -5,7 +5,7 @@ Reframe
 
 > Because *"don't repeat yourself"*
 
-If you need build project in matter of seconds, this tool for you.
+Reframe is a lightweight project scaffolding tool enables rapid setup of new projects by generating the necessary directories, files, and code templates, streamlining the development process from the outset.
 
 ![Reframe Demo](img/reframe.gif?raw=true)
 
