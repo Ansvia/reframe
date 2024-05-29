@@ -3,6 +3,7 @@
 
 * [anvie/basic-cli-typescript](https://github.com/anvie/basic-cli-typescript.rf) - Basic Typescript CLI application.
 * [anvie/basic-rust](https://github.com/anvie/basic-rust.rf) - Basic rust project.
+* [anvie/rust-rest](https://github.com/anvie/rust-rest.rf) - Restful API server in Rust (Actix, WS).
 * [anvie/rust-grpc](https://github.com/anvie/rust-grpc.rf) - Rust application with gRPC support.
 * [anvie/rust-graphql-server](https://github.com/anvie/rust-graphql-server.rf) - GraphQL server written in Rust.
 * [anvie/basic-rust-cli](https://github.com/anvie/basic-rust-cli.rf) - Basic Rust CLI application.
